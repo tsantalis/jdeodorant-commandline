@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link href="template.files/style.css" rel="stylesheet" type="text/css" />
+		<script type="text/javascript" src="template.files/jquery-1.11.1.min.js"></script>
+		<script type="text/javascript" src="template.files/script.js"></script>
+		<title>@Title</title>
+	</head>
+	<body>
+		<div id="invisible">
+		</div>
+		<div id="sourcecode">
+			<div><textarea></textarea></div>
+			<div><button id="closecode">Close</button></div>
+		</div>
+		<div id="centeralize">
+			<div id="firstCode">@FirstCode</div>
+			<div id="secondCode">@SecondCode</div>
+			<div id="textualdiff">
+				<table>
+					<caption>Clone fragments detected by clone detection tool</caption>
+					<tbody>	
+						<tr>
+							<td colspan="2">
+								<span class="bold">File path:</span> <!-- a href="file:///@FilePath1" target="_blank" -->@FilePath1<!-- /a-->
+							</td>
+							<td></td>
+							<td colspan="2">
+								<span class="bold">File path:</span> <!--  a href="file:///@FilePath2" target="_blank" -->@FilePath2<!--  /a -->
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<span class="bold">Method name:</span> <code>@MethodName1</code>
+							</td>
+							<td></td>
+							<td colspan="2">
+								<span class="bold">Method name:</span> <code>@MethodName2</code>
+							</td>
+						</tr>	
+						<tr>
+							<td colspan="2">
+								<span class="bold">Number of AST nodes:</span> @ASTNodes1
+							</td>
+							<td></td>
+							<td colspan="2">
+								<span class="bold">Number of AST nodes:</span> @ASTNodes2
+							</td>
+						</tr>
+						<tr class="sectionsdivider"><td colspan="5"></td></tr>
+						<!-- tr>
+							<td colspan="5">
+								<span class="caption">Textual Diff</span>
+							</td>
+						</tr-->
+					</tbody>
+					<tbody class="code">		
+						@DiffTableRows
+					</tbody>
+					<tbody>
+						<tr class="copylinks">
+							<td colspan="2"><a id="firstCodeShow" class="codeShow" href="#">See real code fragment</a></td>
+							<td></td>
+							<td colspan="2"><a id="secondCodeShow" class="codeShow" href="#">See real code fragment</a></td>
+						</tr>					
+					</tbody>
+				</table>
+			</div>
+			<div></div>
+			<div id="summary">
+				<table>
+					<caption>Summary</caption>
+					<tbody>
+
+						<tr>
+							<td>Number of common nesting structure subtrees</td><td class="right"><span class="bold">@OpportunitiesCount</span></td>
+						</tr>
+						<tr>
+							<td>Number of <a href="#refactorablelist">refactorable cases</a></td><td class="right"><span class="bold">@RefactorableOpportunitiesCount</span></td>
+						</tr>
+						<tr>
+							<td>Number of <a href="#notrefactorablelist">non-refactorable cases</a></td><td class="right"><span class="bold">@NonRefactorableOpportunitiesCount</span></td>
+						</tr>
+						<tr>
+							<td>Time elapsed for finding largest common nesting structure subtrees (ms)</td><td class="right"><span class="bold">@BottomUpMatchingTime</span></td> 
+						</tr>
+						<tr>
+							<td>Clones location</td><td class="right"><span class="bold">@ClonesLocation</span></td> 
+						</tr>
+						<tr>
+							<td>Number of node comparisons</td><td class="right"><span class="bold">@NodeComparisons</span></td> 
+						</tr>
+					</tbody>
+				</table>	
+			</div>
+			<div></div>
+			<ol id="refactorablelist">
+			@Refactorable
+			</ol>
+			<ol id="notrefactorablelist">
+			@NotRefactorable
+			</ol>
+			<!-- {@START} -->
+			<li class="listnumber">
+				<div class="refactorabletitle">
+					@RefactorableTitle
+				</div>
+				<div id="mappingsummarycenterer">
+					<div id="mappingsummary">
+						<table>
+							<caption>Mapping Summary</caption>
+							<tbody>
+								<tr>
+									<td>Number of mapped statements</td><td class="right"><span class="bold">@MappedCount</span></td>
+								</tr>
+								<tr>
+									<td>Number of unmapped statements in the first code fragment</td><td class="right"><span class="bold">@UnmappedCount1</span></td>
+								</tr>
+								<tr>
+									<td>Number of unmapped statements in the second code fragment</td><td class="right"><span class="bold">@UnmappedCount2</span></td>
+								</tr>
+								<tr>
+									<td>Time elapsed for statement mapping (ms)</td><td class="right"><span class="bold">@MappingTime</span></td>
+								</tr>
+							<tr>
+								<td>Clone type</td><td class="right"><span class="bold">@CloneType</span></td>
+							</tr>
+						</tbody>			
+						</table>
+					</table>
+				</div>
+			</div>
+			<table id="mappedstatements">
+				<caption class="small">Mapped Statements</caption>
+				<tbody>
+					<tr>
+						<th class="id">ID</th>
+						<th>Statement</th>
+						<th></th>
+						<th>ID</th>
+						<th>Statement</th>
+					</tr>
+					@MappedTable
+				</tbody>
+			</table>
+			<table id="preconditionviolations">
+				<caption class="small">Precondition Violations (@PreconditionViolationsCount)</caption>
+				<tbody>
+					<tr>
+						<th>Row</th>
+						<th>Violation</th>
+					</tr>
+					@PreconditionViolations
+				</tbody>
+			</table>
+			</li>
+			<!-- {@END} -->
+		</div>
+	</body>
+</html>
