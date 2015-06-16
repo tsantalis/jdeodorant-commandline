@@ -516,6 +516,7 @@ public class Application implements IApplication {
 									RefactoringStatus refStatus = refactoring.checkFinalConditions(npm);
 
 									if (refStatus.isOK()) {
+										pdgSubTreeMapperInfo.setRefactoringWasOK(true);
 										LOGGER.info("Started refactoring");
 										Change change = refactoring.createChange(npm);
 										Change undoChange = change.perform(npm);
@@ -524,6 +525,7 @@ public class Application implements IApplication {
 										// Check for compile errors
 										if (markers.size() > 0) {
 											for (IMarker marker : markers) {
+												//String message = marker.getAttributes().get("message").toString();
 												pdgSubTreeMapperInfo.addFileHavingCompileError(marker.getResource().getFullPath().toOSString());
 											}
 											LOGGER.warn("Compile errors occured during refactoring");
@@ -554,7 +556,7 @@ public class Application implements IApplication {
 										}
 
 									} else {
-										pdgSubTreeMapperInfo.setRefactoringNotOK();
+										pdgSubTreeMapperInfo.setRefactoringWasOK(false);
 										LOGGER.warn("Refactoring was not OK");
 									}
 								} catch (MalformedTreeException mte) {

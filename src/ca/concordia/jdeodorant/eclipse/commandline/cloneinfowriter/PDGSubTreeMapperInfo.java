@@ -15,7 +15,7 @@ public class PDGSubTreeMapperInfo {
 	private long wallNanoTimeElapsedForMapping;
 	private List<TestReportDifference> testResultsDifferences = new ArrayList<>();
 	private Set<String> filesHavingCompileErrors = new HashSet<>();
-	private boolean refactoringNotOk;
+	private boolean refactoringWasOk;
 	
 	public long getWallNanoTimeElapsedForMapping() {
 		return wallNanoTimeElapsedForMapping;
@@ -51,7 +51,7 @@ public class PDGSubTreeMapperInfo {
 	
 	/**
 	 * Is this mapper refactorable?
-	 * @return
+	 * @deprecated
 	 */
 	public boolean isRefactorable() {
 		return this.mapper != null && this.mapper.getPreconditionViolations().size() == 0 &&
@@ -75,12 +75,12 @@ public class PDGSubTreeMapperInfo {
 		return this.testResultsDifferences;
 	}
 
-	public void setRefactoringNotOK() {
-		refactoringNotOk = true;
+	public void setRefactoringWasOK(boolean refactoringWasOk) {
+		this.refactoringWasOk = refactoringWasOk;
 	}
 	
 	public boolean getRefactoringWasOK() {
-		return refactoringNotOk;
+		return refactoringWasOk;
 	}
 	
 	public boolean getHasCompileErrorsAfterRefactoring() {

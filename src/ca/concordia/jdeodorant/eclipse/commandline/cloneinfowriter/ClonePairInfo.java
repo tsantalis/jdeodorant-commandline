@@ -220,14 +220,15 @@ public class ClonePairInfo {
 	}
 
 	/** 
-	 * If one of the mappers (solutions) in this clone pair
-	 * is refactorable, the clone pair is refactorable
+	 * If it was possible to apply refactoring in at least on of the
+	 * subtrees, then the clone pair is considered refactorable
 	 * @return
 	 */
 	public boolean getRefactorable() {
-		for (PDGSubTreeMapperInfo info : subtreeMappersList)
-			if (info.isRefactorable())
+		for (PDGSubTreeMapperInfo info : subtreeMappersList) {
+			if (info.getRefactoringWasOK())
 				return true;
+		}
 		return false;
 	}
 
@@ -238,7 +239,7 @@ public class ClonePairInfo {
 	public Collection<PDGSubTreeMapperInfo> getRefactorableMappersInfo() {
 		List<PDGSubTreeMapperInfo> toReturn = new ArrayList<>();
 		for (PDGSubTreeMapperInfo info : subtreeMappersList)
-			if (info.isRefactorable())
+			if (info.getRefactoringWasOK())
 				toReturn.add(info);
 		return toReturn;
 	}
