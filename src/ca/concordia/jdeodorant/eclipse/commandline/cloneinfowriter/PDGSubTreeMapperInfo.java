@@ -1,5 +1,11 @@
 package ca.concordia.jdeodorant.eclipse.commandline.cloneinfowriter;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
 
 public class PDGSubTreeMapperInfo {
@@ -7,6 +13,9 @@ public class PDGSubTreeMapperInfo {
 	private long timeElapsedToCalculate;
 	
 	private long wallNanoTimeElapsedForMapping;
+	private List<TestReportDifference> testResultsDifferences = new ArrayList<>();
+	private Set<String> filesHavingCompileErrors = new HashSet<>();
+	private boolean refactoringNotOk;
 	
 	public long getWallNanoTimeElapsedForMapping() {
 		return wallNanoTimeElapsedForMapping;
@@ -49,4 +58,36 @@ public class PDGSubTreeMapperInfo {
 				this.mapper.getRemovableNodesG1().size() > 0 && this.mapper.getRemovableNodesG2().size() > 0;
 	}
 	
+
+	public void addFileHavingCompileError(String path) {
+		this.filesHavingCompileErrors.add(path);
+	}
+	
+	public Iterable<String> getFilesHavingCompileError() {
+		return this.filesHavingCompileErrors ;		
+	}
+
+	public void setTestDifferences(List<TestReportDifference> compareTestResults) {
+		this.testResultsDifferences = compareTestResults;
+	}
+	
+	public List<TestReportDifference> getTestDifferences() {
+		return this.testResultsDifferences;
+	}
+
+	public void setRefactoringNotOK() {
+		refactoringNotOk = true;
+	}
+	
+	public boolean getRefactoringWasOK() {
+		return refactoringNotOk;
+	}
+	
+	public boolean getHasCompileErrorsAfterRefactoring() {
+		return filesHavingCompileErrors.size() > 0;
+	}
+	
+	public boolean testsFailedAfterRefactoring() {
+		return testResultsDifferences.size() > 0;
+	}
 }

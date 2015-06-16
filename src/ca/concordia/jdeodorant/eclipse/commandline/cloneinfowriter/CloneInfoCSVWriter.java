@@ -40,8 +40,8 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				"#RefactorableSubtrees|SubtreeMatchingWallNanoTime|Status");
 		mappersCSVLines.add("GroupID|PairID|TreeID|CloneType|PDGMappingWallNanoTime|#PreconditionViolations|#MappedStatements|#UnMappedStatements1|#UnMappedStatements2|#Differences");
 		preconditionViolationsLines.add("GroupID|PairID|TreeID|PreconditionViolationType");
-		compileErrorsLines.add("GroupID|PairID|FileHavingCompileError");
-		testReportDifferencesLines.add("GroupID|PairID|TestDifference");
+		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
+		testReportDifferencesLines.add("GroupID|PairID|TreeID|TestDifference");
 	}
 
 	@Override
@@ -76,6 +76,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 			line.append(mapperInfo.getMapper().getRemovableNodesG1().size()).append(SEPARATOR);
 			line.append(mapperInfo.getMapper().getRemainingNodesG1().size()).append(SEPARATOR);
 			line.append(mapperInfo.getMapper().getRemainingNodesG2().size()).append(SEPARATOR);
+			// TODO add other things to the files (test fails, etc)
 			if (mapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null)
 				line.append(mapperInfo.getMapper().getNodeDifferences().size());
 			else 
@@ -90,23 +91,24 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				preconditionViolationsLines.add(line.toString());
 			}
 			
-		}
-		for (String fileHavingCompileError : pairInfo.getFilesHavingCompileError()) {
-			StringBuilder compileErrorsLine = new StringBuilder();
-			compileErrorsLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
-			compileErrorsLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
-			compileErrorsLine.append(fileHavingCompileError);
-			compileErrorsLines.add(compileErrorsLine.toString());
-		}
-		
-		if (pairInfo.getTestDifferences() != null) {
-			for (TestReportDifference testReportDifference : pairInfo.getTestDifferences()) {
+			for (String fileHavingCompileError : mapperInfo.getFilesHavingCompileError()) {
+				StringBuilder compileErrorsLine = new StringBuilder();
+				compileErrorsLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
+				compileErrorsLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
+				compileErrorsLine.append(treeID).append(SEPARATOR);
+				compileErrorsLine.append(fileHavingCompileError);
+				compileErrorsLines.add(compileErrorsLine.toString());
+			}
+			
+			for (TestReportDifference testReportDifference : mapperInfo.getTestDifferences()) {
 				StringBuilder testReportDifferencesLine = new StringBuilder();
 				testReportDifferencesLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
 				testReportDifferencesLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
+				testReportDifferencesLine.append(treeID).append(SEPARATOR);
 				testReportDifferencesLine.append(testReportDifference.toString());
 				testReportDifferencesLines.add(testReportDifferencesLine.toString());
 			}
+			
 		}
 	}
 	
@@ -148,11 +150,12 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 
 	@Override
 	public void closeMedia(boolean append) {
-		writeLinesToFile(mainCSVLines, this.outputFileSaveFolder + outputFileNamesPrefix + "." + GLOBAL_CSV_FILE_NAME, append);
-		writeLinesToFile(mappersCSVLines, this.outputFileSaveFolder + outputFileNamesPrefix + "." + MAPPERS_FILE_NAME, append);
-		writeLinesToFile(preconditionViolationsLines, this.outputFileSaveFolder + outputFileNamesPrefix + "." + PRECOND_VIOLATIONS_FILE_NAME, append);
-		writeLinesToFile(compileErrorsLines, this.outputFileSaveFolder + outputFileNamesPrefix + "." + COMPILE_ERRORS_FILE_NAME, append);
-		writeLinesToFile(testReportDifferencesLines, this.outputFileSaveFolder + outputFileNamesPrefix + "." + TEST_DIFFERENCES_FILE_NAME, append);
+		String filePrefix = this.outputFileSaveFolder + outputFileNamesPrefix + ".";
+		writeLinesToFile(mainCSVLines, filePrefix + GLOBAL_CSV_FILE_NAME, append);
+		writeLinesToFile(mappersCSVLines, filePrefix + MAPPERS_FILE_NAME, append);
+		writeLinesToFile(preconditionViolationsLines, filePrefix + PRECOND_VIOLATIONS_FILE_NAME, append);
+		writeLinesToFile(compileErrorsLines, filePrefix + COMPILE_ERRORS_FILE_NAME, append);
+		writeLinesToFile(testReportDifferencesLines, filePrefix + TEST_DIFFERENCES_FILE_NAME, append);
 	}
 	
 	

@@ -22,8 +22,6 @@ import org.eclipse.jdt.core.Signature;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 
-import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
-
 public class ClonePairInfo {
 
 	public enum AnalysisStatus {
@@ -70,8 +68,6 @@ public class ClonePairInfo {
 	private String firstClass, secondClass, firstPackage, secondPackage;
 	private Set<String> testPackages = new HashSet<>();
 	private Set<String> testSourceFolders = new HashSet<>();
-	private List<String> filesHavingCompileErrors = new ArrayList<>();
-	private List<TestReportDifference> compareTestResults;
 
 	public int getCloneGroupID() {
 		return cloneGroupID;
@@ -510,20 +506,5 @@ public class ClonePairInfo {
 	
 	public Set<String> getTestSourceFolders() {
 		return this.testSourceFolders;
-	}
-
-	public void addFileHavingCompileError(String path) {
-		this.filesHavingCompileErrors.add(path);
-	}
-	
-	public Iterable<String> getFilesHavingCompileError() {
-		return this.filesHavingCompileErrors;		
-	}
-
-	public void setTestDifferences(List<TestReportDifference> compareTestResults) {
-		this.compareTestResults = compareTestResults;
-	}
-	public List<TestReportDifference> getTestDifferences() {
-		return this.compareTestResults;
 	}
 }

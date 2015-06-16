@@ -89,6 +89,7 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
+import org.eclipse.text.edits.MalformedTreeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,40 +113,40 @@ import ca.concordia.jdeodorant.eclipse.commandline.test.MatchingSubtreesTest;
 
 @SuppressWarnings("restriction")
 public class Application implements IApplication {
-	
+
 	private static Logger LOGGER = LoggerFactory.getLogger(Application.class);
 	private static IJavaProject jProject;
 	private static CLIParser cliParser;
-		
+
 	@Override
 	public Object start(IApplicationContext arg0) throws Exception {
-		
+
 		// Get the commandline parser object
 		cliParser = new CLIParser((String[])arg0.getArguments().get(IApplicationContext.APPLICATION_ARGS));
-		
+
 		if (cliParser.showHelp()) {
 			cliParser.printHelp();
 		}
 		else { 
-			
+
 			ApplicationMode applicationMode = cliParser.getApplicationMode(ApplicationMode.ANALYZE_EXISTING);
-			
+
 			String projectName = cliParser.getProjectName();
 			// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
 			jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
 			if (jProject == null) {
 				throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
 			}
-			
+
 			File excelFile = new File(cliParser.getExcelFilePath());
-//			addResourcePaths(jProject, excelFile);
-			
+			//			addResourcePaths(jProject, excelFile);
+
 			int startFrom = cliParser.getStartingRow();
 			boolean appendResults = cliParser.getAppendResults();
 			int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
 			String[] testPackages = cliParser.getTestPackages();
 			String[] testSourceFolders = cliParser.getTestSourceFolders();
-			
+
 			switch (applicationMode) {
 			case PARSE:
 				parseCloneToolOutputFile(cliParser, jProject, excelFile);		
@@ -157,18 +158,18 @@ public class Application implements IApplication {
 				if (!excelFile.exists()) {
 					throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
 				}
-				
+
 				testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, testPackages, testSourceFolders);
 				break;
-				
+
 			default:
 				throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
 			}							
 		}
-		
+
 		return IApplication.EXIT_OK;
 	}
-	
+
 	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) {
 		String toolOutputMainFile = cliParser.getCloneToolOutputFilePath();
 		CloneToolParserType toolType = CloneToolParserType.valueOf(cliParser.getCloneToolName().toUpperCase());
@@ -219,9 +220,9 @@ public class Application implements IApplication {
 			boolean appendResults, 
 			int[] cloneGroupIDsToSkip,
 			String[] testPackages, String[] testSourceFolders) throws Exception {
-		
+
 		LOGGER.info("Testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath());
-		
+
 		TestReportResults originalTestReport = null;
 		if (cliParser.runTests() || cliParser.hasCoverageReport())
 			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent());
@@ -233,9 +234,9 @@ public class Application implements IApplication {
 		 * will be added to this file.
 		 */
 		Workbook originalWorkbook;
-  		String originalExcelFileName = originalExcelFile.getName().substring(0, originalExcelFile.getName().lastIndexOf('.'));
+		String originalExcelFileName = originalExcelFile.getName().substring(0, originalExcelFile.getName().lastIndexOf('.'));
 		File copyWorkBookFile = new File(originalExcelFile.getParentFile().getAbsolutePath() + "/" + originalExcelFileName + "-analyzed.xls");
-		
+
 		/* 
 		 * This temporary file is the one we use to read the initial data from. Its
 		 * the same file as originalExcelFile, except when we are going to append data to 
@@ -243,27 +244,27 @@ public class Application implements IApplication {
 		 */
 		File temporaryFile = new File(originalExcelFile.getParentFile().getAbsolutePath() + "/" + originalExcelFile.getName() + "-temp.xls");
 		temporaryFile.deleteOnExit();
-		
+
 		if (appendResults && copyWorkBookFile.exists() && copyWorkBookFile.length() > 0) {
 			Files.copy(copyWorkBookFile.toPath(), temporaryFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		} else {
 			Files.copy(originalExcelFile.toPath(), temporaryFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		}
-		
+
 		// Make a copy of the original excel file
 		originalWorkbook = Workbook.getWorkbook(temporaryFile);
 		WritableWorkbook copyWorkbook = Workbook.createWorkbook(copyWorkBookFile, originalWorkbook);
 		Sheet originalSheet = originalWorkbook.getSheet(0);
 		WritableSheet copySheet = copyWorkbook.getSheet(0); 
-		
+
 		// Sort the array containing clone group IDs to skip, in order to be able to do Binary Search
 		Arrays.sort(cloneGroupIDsToSkip);
 
 		String projectName = iJavaProject.getElementName();
-		
+
 		// Object used to create HTML reports and CSV files
 		List<CloneInfoWriter> infoWriters = new ArrayList<>();
-		
+
 		infoWriters.add(new CloneInfoHTMLWriter(originalExcelFile.getParentFile().getAbsolutePath(), projectName, originalExcelFileName));
 		infoWriters.add(new CloneInfoCSVWriter(originalExcelFile.getParentFile().getAbsolutePath(), projectName, originalExcelFileName));
 
@@ -285,10 +286,10 @@ public class Application implements IApplication {
 				}
 				String cloneType = originalSheet.getCell(ExcelFileColumns.CLONE_GROUP_INFO.getColumnNumber(), cloneGroupStartingRowNumber).getContents(); 
 
-				
+
 				boolean userSkippedGroup = Arrays.binarySearch(cloneGroupIDsToSkip, cloneGroupID) >= 0;
 				boolean repeatedCloneGroup = cloneType.equals("Repeated");
-				
+
 				boolean classLevelClone = false;
 				if (!userSkippedGroup) {
 					int numberOfBlankMethods = 0;
@@ -301,18 +302,18 @@ public class Application implements IApplication {
 					// If all the methods inside the clone group are empty, the clone group is a class-level clone group.
 					classLevelClone = numberOfBlankMethods == cloneGroupSize;
 				}
-				
+
 				if (userSkippedGroup || repeatedCloneGroup || classLevelClone) {
-					
+
 					String status = "";
-					
+
 					if (userSkippedGroup)
 						status = "user has marked this clone group to be skipped";
 					else if(repeatedCloneGroup)
 						status = "this is a repeated clone";
 					else if (classLevelClone)
 						status = "this is a class-level clone group";
-					
+
 					LOGGER.warn(String.format("%s%%: Skipping clone group %s (row %s to %s), since %s", 
 							Math.round(100 * (float)cloneGroupStartingRowNumber / numberOfRows),
 							cloneGroupID ,
@@ -329,10 +330,10 @@ public class Application implements IApplication {
 							LOGGER.warn(String.format("ICompilationUnit was not found for %s, skipping clone at row %s", fullName1, cloneGroupStartingRowNumber + firstCloneNumber + 1));
 							continue;
 						}
-						
+
 						int firstStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), cloneGroupStartingRowNumber + firstCloneNumber).getContents());
 						int firstEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), cloneGroupStartingRowNumber + firstCloneNumber).getContents());
-						
+
 						for (int secondCloneNumber = firstCloneNumber + 1; secondCloneNumber < cloneGroupSize; secondCloneNumber++) { 	
 							String fullName2 = originalSheet.getCell(ExcelFileColumns.PACKAGE_NAME.getColumnNumber(), cloneGroupStartingRowNumber + secondCloneNumber).getContents().replace(".", "/") +
 									"/" + originalSheet.getCell(ExcelFileColumns.CLASS_NAME.getColumnNumber(), cloneGroupStartingRowNumber + secondCloneNumber).getContents() + ".java";
@@ -344,7 +345,7 @@ public class Application implements IApplication {
 							}
 							int secondStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), cloneGroupStartingRowNumber + secondCloneNumber).getContents());
 							int secondEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), cloneGroupStartingRowNumber + secondCloneNumber).getContents());
-	
+
 							ClonePairInfo clonePairInfo = new ClonePairInfo();
 							clonePairInfo.setICompilationUnitFirst(iCompilationUnit1);
 							clonePairInfo.setICompilationUnitSecond(iCompilationUnit2);
@@ -356,7 +357,7 @@ public class Application implements IApplication {
 							clonePairInfo.setEndOffsetOfFirstCodeFragment(firstEndOffset);
 							clonePairInfo.setStartOffsetOfSecondCodeFragment(secondStartOffset);
 							clonePairInfo.setEndOffsetOfSecondCodeFragment(secondEndOffset);
-							
+
 							// Only write information to the HTML report, not the CSV files
 							infoWriters.get(0).writeCloneInfo(clonePairInfo);
 
@@ -368,24 +369,24 @@ public class Application implements IApplication {
 									Colour.WHITE);
 						}
 					}
-					
+
 					cloneGroupStartingRowNumber += cloneGroupSize - 1;
 					cloneNumber++;
 					continue;
 				}
 
 				int numberOfRefactorablePairs = 0;
-				
+
 				PDG[] pdgArray = new PDG[cloneGroupSize];
 
 
 				for (int firstCloneNumber = 0; firstCloneNumber < cloneGroupSize - 1; firstCloneNumber++) {
-					
+
 					int firstCloneRow = cloneGroupStartingRowNumber + firstCloneNumber;
 					LOGGER.info(String.format("%s%%: Reading information from row %s (Clone group ID %s, clone #%s)",
 							Math.round(100 * (float)firstCloneRow / numberOfRows),
 							firstCloneRow + 1, cloneGroupID, firstCloneNumber + 1));
-					
+
 					String firstClassName = originalSheet.getCell(ExcelFileColumns.CLASS_NAME.getColumnNumber(), firstCloneRow).getContents();
 					String firstPackageName = originalSheet.getCell(ExcelFileColumns.PACKAGE_NAME.getColumnNumber(), firstCloneRow).getContents();
 					String firstFullName = firstPackageName + "." + firstClassName; 
@@ -402,23 +403,23 @@ public class Application implements IApplication {
 								firstFullName, firstStartOffset, firstEndOffset, firstCloneRow));
 						continue;
 					}
-					
+
 					IMethod firstIMethod = getIMethod(iJavaProject, firstFullName, firstMethodName, firstMethodSignature, firstStartOffset, firstEndOffset);
-					
-					
+
+
 					if(firstIMethod == null) {
 						LOGGER.info(String.format("IMethod could not be retrieved for method %s in %s, skipping clone at row %s", 
 								firstMethodName, firstFullName, firstCloneRow + 1));
 						continue;
 					}
-					
+
 					if (pdgArray[firstCloneNumber] == null) {
 						LOGGER.info(String.format("%s%%: Generating PDG for method \"%s\" in \"%s\"",
 								Math.round(100 * (float)cloneGroupStartingRowNumber / numberOfRows),
 								firstMethodName, firstFullName));
 						pdgArray[firstCloneNumber] = getPDG(firstIMethod);
 					}
-					
+
 					PDG pdg1 = pdgArray[firstCloneNumber];
 
 					for (int secondCloneNumber = firstCloneNumber + 1; secondCloneNumber < cloneGroupSize; secondCloneNumber++) { 		
@@ -427,7 +428,7 @@ public class Application implements IApplication {
 						LOGGER.info(String.format("%s%%: Reading information from row %s (Clone group ID %s, clone #%s)", 
 								Math.round(100 * (float)firstCloneRow / numberOfRows),
 								secondCloneRow + 1, cloneGroupID, firstCloneNumber + secondCloneNumber + 1));
-						
+
 						String secondClassName = originalSheet.getCell(ExcelFileColumns.CLASS_NAME.getColumnNumber(), secondCloneRow).getContents();
 						String secondPackageName = originalSheet.getCell(ExcelFileColumns.PACKAGE_NAME.getColumnNumber(), secondCloneRow).getContents();
 						String secondFullName = secondPackageName + "." + secondClassName; 
@@ -437,7 +438,7 @@ public class Application implements IApplication {
 						int secondEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), secondCloneRow).getContents());
 						String secondSrcFolder = originalSheet.getCell(ExcelFileColumns.SOURCE_FOLDER.getColumnNumber(), secondCloneRow).getContents();
 						float secondCloneCoverage = Float.parseFloat(originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), secondCloneRow).getContents());
-						
+
 						if ("".equals(secondMethodSignature)) {
 							LOGGER.warn(String.format("No method could be found in file '%s' inside offsets %s to %s ," +
 									"so this is a class-level clone. Skipping clone pair at rows %s-%s",
@@ -462,7 +463,7 @@ public class Application implements IApplication {
 										secondMethodName, secondFullName));
 								pdgArray[secondCloneNumber] = getPDG(secondIMethod);
 							}
-							
+
 							pdg2 = pdgArray[secondCloneNumber];
 						}
 						else 
@@ -489,7 +490,7 @@ public class Application implements IApplication {
 						clonePairInfo.setSecondPackage(secondPackageName);
 						clonePairInfo.setTestPackages(testPackages);
 						clonePairInfo.setTestSourceFolders(testSourceFolders);
-						
+
 						if(firstIMethod != null && secondIMethod != null) {
 							LOGGER.info(String.format("%s%%: Analyzing Clone #%s (Group %s, Pair %s-%s): %s#%s (row %s) and %s#%s (row %s)", 
 									Math.round(100 * (float)firstCloneRow / numberOfRows), cloneNumber,
@@ -498,64 +499,71 @@ public class Application implements IApplication {
 									secondFullName, secondMethodName, secondCloneRow + 1));
 							getOptimalSolution(methodsInfo, clonePairInfo);
 						}
-						
+
 						if (clonePairInfo.getRefactorable())
 							numberOfRefactorablePairs++;
 
-						List<DivideAndConquerMatcher> mappers = new ArrayList<>();
-						for (PDGSubTreeMapperInfo pdgSubTreeMapperInfo : clonePairInfo.getPDFSubTreeMappersInfoList()) {
-							mappers.add(pdgSubTreeMapperInfo.getMapper());
-						}
-
 						if (firstCloneCoverage > 0 || secondCloneCoverage > 0) {
-							ExtractCloneRefactoring refactoring = new ExtractCloneRefactoring(mappers);
-							IProgressMonitor npm = new NullProgressMonitor();
-							RefactoringStatus refStatus = refactoring.checkFinalConditions(npm);
+							for (PDGSubTreeMapperInfo pdgSubTreeMapperInfo : clonePairInfo.getPDFSubTreeMappersInfoList()) {
+								// Create a list with one mapper, because ExtractCloneRefactoring needs a list
+								List<DivideAndConquerMatcher> mappers = new ArrayList<>();
+								mappers.add(pdgSubTreeMapperInfo.getMapper());
 
-							if (refStatus.isOK()) {
-								LOGGER.info("Started refactoring");
-								Change change = refactoring.createChange(npm);
-								Change undoChange = change.perform(npm);
-								LOGGER.info("Finished Refactoring");
-								List<IMarker> markers = buildProject(iJavaProject, npm);
-								// Check for compile errors
-								if (markers.size() > 0) {
-									for (IMarker marker : markers) {
-										clonePairInfo.addFileHavingCompileError(marker.getResource().getFullPath().toOSString());
-									}
-									LOGGER.warn("Compile errors occured during refactoring");
-								} else { 
-									if (cliParser.runTests() || cliParser.hasCoverageReport()) {
-										// Run tests here and see if they pass
-										LOGGER.info("Started running unit tests");
-										new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
-										LOGGER.info("Finished running unit tests");
-										TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent());
-										List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
-										if (compareTestResults.size() != 0) {
-											LOGGER.warn("Tests failed after refactoring");
-											clonePairInfo.setTestDifferences(compareTestResults);
-										} else {
-											LOGGER.info("Tests passed after refactoring");
+								ExtractCloneRefactoring refactoring = new ExtractCloneRefactoring(mappers);
+								refactoring.setExtractedMethodName("ExtractedMethod");
+								IProgressMonitor npm = new NullProgressMonitor();
+								try {
+									RefactoringStatus refStatus = refactoring.checkFinalConditions(npm);
+
+									if (refStatus.isOK()) {
+										LOGGER.info("Started refactoring");
+										Change change = refactoring.createChange(npm);
+										Change undoChange = change.perform(npm);
+										LOGGER.info("Finished Refactoring");
+										List<IMarker> markers = buildProject(iJavaProject, npm);
+										// Check for compile errors
+										if (markers.size() > 0) {
+											for (IMarker marker : markers) {
+												pdgSubTreeMapperInfo.addFileHavingCompileError(marker.getResource().getFullPath().toOSString());
+											}
+											LOGGER.warn("Compile errors occured during refactoring");
+										} else { 
+											if (cliParser.runTests() || cliParser.hasCoverageReport()) {
+												// Run tests here and see if they pass
+												LOGGER.info("Started running unit tests");
+												new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
+												LOGGER.info("Finished running unit tests");
+												TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent());
+												List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
+												if (compareTestResults.size() != 0) {
+													LOGGER.warn("Tests failed after refactoring");
+													pdgSubTreeMapperInfo.setTestDifferences(compareTestResults);
+												} else {
+													LOGGER.info("Tests passed after refactoring");
+												}
+											}
 										}
+
+										LOGGER.info("Started undoing refactoring");
+										undoChange.perform(npm);
+										LOGGER.info("Finished undoing refactoring");
+										markers = buildProject(iJavaProject, npm);
+										if (markers.size() > 0) {
+											// Is it possible to have compile errors after undoing?
+											LOGGER.error("Compiler errors after undoing refactorings");
+										}
+
+									} else {
+										pdgSubTreeMapperInfo.setRefactoringNotOK();
+										LOGGER.warn("Refactoring was not OK");
 									}
+								} catch (MalformedTreeException mte) {
+									// Overlapping text edits
+									pdgSubTreeMapperInfo.addFileHavingCompileError("Overlapping text edits");
 								}
-
-								LOGGER.info("Started undoing refactoring");
-								undoChange.perform(npm);
-								LOGGER.info("Finished undoing refactoring");
-								markers = buildProject(iJavaProject, npm);
-								if (markers.size() > 0) {
-									// Is it possible to have compile errors after undoing?
-									LOGGER.error("Compiler errors after undoing refactorings");
-								}
-
-							} else {
-								// TODO Refactoring was not OK
-								LOGGER.warn("Refactoring was not OK");
 							}
 						} else {
-							LOGGER.info("Did not apply refactoring on clone pair, because none of the clones are covered by unit tests");
+							LOGGER.info("Did not apply refactoring on the current clone pair, because none of the clones is covered by unit tests");
 						}
 
 						if (firstCloneNumber == 0) {
@@ -578,21 +586,21 @@ public class Application implements IApplication {
 									clonePairInfo.getNumberOfCloneStatementsInSecondCodeFragment());
 							copySheet.addCell(number);
 						}
-						
+
 						// Write the stuff to the HTML files and CSV files
 						for (CloneInfoWriter cloneInfoWriter : infoWriters)
 							cloneInfoWriter.writeCloneInfo(clonePairInfo);
-						 
+
 						addHyperlinkToTheExcelFile(copySheet, 
 								firstCloneRow, 
 								ExcelFileColumns.DETAILS.getColumnNumber() + secondCloneNumber - firstCloneNumber - 1, 
 								CloneInfoHTMLWriter.PATH_TO_HTML_REPORTS + "/" + cloneGroupID + "-" + clonePairInfo.getClonePairID() + ".htm",
 								cloneGroupID + "-" + clonePairInfo.getClonePairID(),
 								clonePairInfo.getRefactorable() ? Colour.LIGHT_GREEN : Colour.RED);
-						
+
 						//copyWorkbook.write();
 						//copyWorkbook.close();
-						
+
 						//copyWorkbook = Workbook.getWorkbook(copyWorkBookFile);
 						//copySheet = copyWorkbook.getSheet(0);
 					}
@@ -606,9 +614,9 @@ public class Application implements IApplication {
 					cloneGroupStartingRowNumber = numberOfRows;
 				else 
 					cloneGroupStartingRowNumber = cloneGroupStartingRowNumber + cloneGroupSize - 1;
-				
+
 				cloneNumber++;
-				
+
 				for (CloneInfoWriter cloneInfoWriter : infoWriters)
 					cloneInfoWriter.closeMedia(appendResults);
 			}
@@ -621,7 +629,7 @@ public class Application implements IApplication {
 			copyWorkbook.write();
 			copyWorkbook.close();
 		}
-		
+
 		LOGGER.info("Finished testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath() + ", output file: " + copyWorkBookFile.getAbsolutePath());
 
 	}
@@ -633,19 +641,19 @@ public class Application implements IApplication {
 		LOGGER.info("Started building");	
 		project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, npm);
 		LOGGER.info("Finished building");
-		
+
 		ArrayList<IMarker> result = new ArrayList<>();
-	    IMarker[] markers = null;
-	    markers = project.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
-	    for (IMarker marker: markers)
-	    {
-	        Integer severityType = (Integer) marker.getAttribute(IMarker.SEVERITY);
-	        if (severityType.intValue() == IMarker.SEVERITY_ERROR)
-	                result.add(marker);
-	    }
-	    return result;
+		IMarker[] markers = null;
+		markers = project.findMarkers(IJavaModelMarker.JAVA_MODEL_PROBLEM_MARKER, true, IResource.DEPTH_INFINITE);
+		for (IMarker marker: markers)
+		{
+			Integer severityType = (Integer) marker.getAttribute(IMarker.SEVERITY);
+			if (severityType.intValue() == IMarker.SEVERITY_ERROR)
+				result.add(marker);
+		}
+		return result;
 	}
-	
+
 	private ICompilationUnit getICompilationUnit(IJavaProject iJavaProject, String fullName1) {
 		try {
 			IClasspathEntry[] classpathEntries = iJavaProject.getResolvedClasspath(true);
@@ -666,20 +674,20 @@ public class Application implements IApplication {
 		} catch (JavaModelException e) {
 			e.printStackTrace();
 		}
-        return null;
+		return null;
 	}
 
 	private void addHyperlinkToTheExcelFile(WritableSheet sheet, int row, int col, String path, String description, Colour cellBGColour) {	
-			
+
 		try {
-			
+
 			WritableCellFormat wcf = new WritableCellFormat();
 			wcf.setBackground(cellBGColour);
 			wcf.setBorder(Border.ALL, BorderLineStyle.THIN);
-			
+
 			//WritableFont cellFont = new WritableFont(sheet.getWritableCell(col, row).getCellFormat().getFont());
-		    //cellFont.setItalic(true);
-		    //cellFont.setColour(Colour.BLUE);
+			//cellFont.setItalic(true);
+			//cellFont.setColour(Colour.BLUE);
 			//wcf.setFont(cellFont);
 
 			Formula hyperLinkFormula = new Formula(col, row,
@@ -710,7 +718,7 @@ public class Application implements IApplication {
 		IProject[] projects = root.getProjects();
 		for(IProject project : projects) {
 			if(project.isOpen() && project.hasNature(JavaCore.NATURE_ID) && project.getName().equals(projectName)) {
-				
+
 				jProject = JavaCore.create(project);
 				LOGGER.info("Project " + projectName + " was found in the workspace");
 
@@ -777,12 +785,12 @@ public class Application implements IApplication {
 
 			if (inputMethodsInfo.getIMethod2().getDeclaringType().isAnonymous()) {
 				classObject2 = systemObject.getAnonymousClassDeclaration(inputMethodsInfo.getIMethod2().getDeclaringType());
-				
+
 			}
 			else {
 				classObject2 = systemObject.getClassObject(methodObject2.getClassName());
 			}
-			
+
 			ITypeRoot typeRoot1 = classObject1.getITypeRoot();
 			ITypeRoot typeRoot2 = classObject2.getITypeRoot();
 			CompilationUnitCache.getInstance().lock(typeRoot1);
@@ -807,10 +815,10 @@ public class Application implements IApplication {
 			ControlDependenceTreeNode controlDependenceTreePDG2 = new ControlDependenceTreeGenerator(inputMethodsInfo.getSecondPDG()).getRoot();
 
 			LOGGER.info("CDT 1 depth = " + controlDependenceTreePDG1.getMaxLevel() + 
-						", CDT 2 depth = " + controlDependenceTreePDG2.getMaxLevel());
+					", CDT 2 depth = " + controlDependenceTreePDG2.getMaxLevel());
 
 			LOGGER.info("CDT 1 leaves = " + controlDependenceTreePDG1.getLeaves().size() + 
-						", CDT 2 leaves = " + controlDependenceTreePDG2.getLeaves().size());
+					", CDT 2 leaves = " + controlDependenceTreePDG2.getLeaves().size());
 
 			// Get the control predicate nodes inside the ASTNode returned by Eclipse's NodeFinder
 			List<ASTNode> controlASTNodes1X = visitor1.getControlStatementsList();
@@ -829,7 +837,7 @@ public class Application implements IApplication {
 				if(isInside(astNode, secondStartOffset, secondEndOffset, pairInfo.getICompilationUnitSecond()))
 					controlASTNodes2.add(astNode);
 			}
-			
+
 			// Get all statement nodes (including control and leaf nodes) inside the ASTNode returned by Eclipse's NodeFinder
 			List<ASTNode> ASTNodes1X = visitor1.getStatementsList();
 			List<ASTNode> ASTNodes2X = visitor2.getStatementsList();
@@ -849,34 +857,34 @@ public class Application implements IApplication {
 					ASTNodes2.add(astNode);	
 				}
 			}
-			
+
 			// Get the real offsets of the AST nodes being analyzed (inside the code fragments)
 			int minStart1 = Integer.MAX_VALUE;
 			int minStart2 = Integer.MAX_VALUE;
 			int maxEnd1 = -1;
 			int maxEnd2 = -1;
-			
+
 			for (ASTNode node : ASTNodes1) {
 				if (minStart1 > node.getStartPosition())
 					minStart1 = node.getStartPosition();
 				if (maxEnd1 < node.getStartPosition() + node.getLength())
 					maxEnd1 = node.getStartPosition() + node.getLength();
 			}
-			
+
 			pairInfo.setStartOffsetOfFirstCodeFragment(minStart1);
 			pairInfo.setEndOffsetOfFirstCodeFragment(maxEnd1);
-			
+
 			for (ASTNode node : ASTNodes2) {
 				if (minStart2 > node.getStartPosition())
 					minStart2 = node.getStartPosition();
 				if (maxEnd2 < node.getStartPosition() + node.getLength())
 					maxEnd2 = node.getStartPosition() + node.getLength();
 			}
-			
+
 			pairInfo.setStartOffsetOfSecondCodeFragment(minStart2);
 			pairInfo.setEndOffsetOfSecondCodeFragment(maxEnd2);
-			
-			
+
+
 			// Get all the control predicate nodes inside the methods containing the clone fragments 
 			List<ControlDependenceTreeNode> CDTNodes1 = controlDependenceTreePDG1.getNodesInBreadthFirstOrder();
 			List<ControlDependenceTreeNode> CDTNodes2 = controlDependenceTreePDG2.getNodesInBreadthFirstOrder();
@@ -904,10 +912,10 @@ public class Application implements IApplication {
 
 			// Used for measuring time
 			ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-			
+
 			// If one of the clone fragments contain no control predicate nodes, create a dummy CDT 
 			if(subTreeCDTNodes1.size() == 0 || subTreeCDTNodes2.size() == 0) {
-				
+
 				// Get the control parent (or method) containing the clone fragments
 				ASTNode parent1 = getControlParent(ASTNodes1);
 				ASTNode parent2 = getControlParent(ASTNodes2);
@@ -916,11 +924,11 @@ public class Application implements IApplication {
 				// If all the ASTNodes are nested under an "else", it returns the "else" ControlDependenceTreeNode instead of the "if"
 				ControlDependenceTreeNode controlDependenceSubTreePDG1X = getSubTreeCDTNode(CDTNodes1, parent1, allNodesNestedUnderElse(ASTNodes1));
 				ControlDependenceTreeNode controlDependenceSubTreePDG2X = getSubTreeCDTNode(CDTNodes2, parent2, allNodesNestedUnderElse(ASTNodes2));
-				
+
 				// Get all the control dependence tree nodes under the obtained ControlDependenceTreeNode
 				List<ControlDependenceTreeNode> CDTNodesList1 = controlDependenceSubTreePDG1X.getNodesInBreadthFirstOrder();
 				List<ControlDependenceTreeNode> CDTNodesList2 = controlDependenceSubTreePDG2X.getNodesInBreadthFirstOrder();
-				
+
 				// If the ControlDependenceTreeNodeX is a method entry node, then remove its children cdt nodes
 				if(controlDependenceSubTreePDG1X.getNode() instanceof PDGMethodEntryNode) {
 					ListIterator<ControlDependenceTreeNode> iterator = CDTNodesList1.listIterator();
@@ -938,7 +946,7 @@ public class Application implements IApplication {
 						}
 					}
 				}
-				
+
 				if(controlDependenceSubTreePDG2X.getNode() instanceof PDGMethodEntryNode) {
 					ListIterator<ControlDependenceTreeNode> iterator = CDTNodesList2.listIterator();
 					while(iterator.hasNext()) {
@@ -955,27 +963,27 @@ public class Application implements IApplication {
 						}
 					}
 				}
-				
+
 				// Create CDT subtree with containing only the filtered CDTNodes
 				ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTreeWithTheFirstNodeAsRoot(controlDependenceTreePDG1, CDTNodesList1);
 				ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTreeWithTheFirstNodeAsRoot(controlDependenceTreePDG2, CDTNodesList2);
-				
+
 				// We didn't do any bottom-up matching, hence:
 				pairInfo.setSubtreeMatchingTime(-1);
-				
+
 				// Try to map!
 				long startTime = threadMXBean.getCurrentThreadCpuTime();
 				PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, true, null);
 				long endTime = threadMXBean.getCurrentThreadCpuTime();
-				
+
 				// Create a new mapper information object (contains the real mapper + the time elapsed for mapping)
 				PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);
 				mapperInfo.setTimeElapsedForMapping(endTime - startTime);
-				
+
 				// Add this (and the only) mapper informations (PDGMapper + time) to the pair information object
 				pairInfo.addMapperInfo(mapperInfo);	
 				pairInfo.setStatus(AnalysisStatus.NORMAL);
-				
+
 			} else { // If we have a control structure
 
 				long startThreadime = threadMXBean.getCurrentThreadCpuTime();
@@ -984,29 +992,29 @@ public class Application implements IApplication {
 				// Create CDT subtree with containing only the filtered CDTNodes
 				ControlDependenceTreeNode controlDependenceSubTreePDG1X = generateControlDependenceSubTree(controlDependenceTreePDG1, subTreeCDTNodes1);
 				ControlDependenceTreeNode controlDependenceSubTreePDG2X = generateControlDependenceSubTree(controlDependenceTreePDG2, subTreeCDTNodes2);
-				
+
 				// Nodes of original CDTs in Breadth First order
 				List<ControlDependenceTreeNode> CDTNodesList1 = controlDependenceSubTreePDG1X.getNodesInBreadthFirstOrder();
 				List<ControlDependenceTreeNode> CDTNodesList2 = controlDependenceSubTreePDG2X.getNodesInBreadthFirstOrder();
-				
+
 				// Do the bottom up mapping and get all the pairs of mapped CDT subtrees
 				BottomUpCDTMapper bottomUpCDTMapper = new BottomUpCDTMapper(iCompilationUnit1, iCompilationUnit2, controlDependenceSubTreePDG1X, controlDependenceSubTreePDG2X, false);
 
 				// Get the solutions
 				List<CompleteSubTreeMatch> bottomUpSubTreeMatches = bottomUpCDTMapper.getSolutions();
-				
+
 				long endThreadTime = threadMXBean.getCurrentThreadCpuTime();
 				long endWallNanoTime = System.nanoTime();
-				
+
 				pairInfo.setSubtreeMatchingTime(endThreadTime - startThreadime);
 				pairInfo.setSubtreeMatchingWallNanoTime(endWallNanoTime - startWallNanoTime);
-				
+
 				if (bottomUpSubTreeMatches.size() == 0) {
-					
+
 					pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
-					
+
 				} else {
-				
+
 					// For each solution in the bottom-up matching, do the PDG mapping 
 					for(CompleteSubTreeMatch subTreeMatch : bottomUpSubTreeMatches) {
 
@@ -1032,47 +1040,47 @@ public class Application implements IApplication {
 
 						// If all the matched pairs are completely inside one of the code fragments 
 						//if(matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())) {
-							boolean fullTreeMatch = (matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size()));
-							// Get the nodes of the matched pairs in breadth first order
-							List<ControlDependenceTreeNode> orderedSubtreeMatchNodes1 = getCDTNodesInBreadthFirstOrder(CDTNodesList1,subTreeMatchNodes1);
-							List<ControlDependenceTreeNode> orderedSubtreeMatchNodes2 = getCDTNodesInBreadthFirstOrder(CDTNodesList2,subTreeMatchNodes2);
+						boolean fullTreeMatch = (matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size()));
+						// Get the nodes of the matched pairs in breadth first order
+						List<ControlDependenceTreeNode> orderedSubtreeMatchNodes1 = getCDTNodesInBreadthFirstOrder(CDTNodesList1,subTreeMatchNodes1);
+						List<ControlDependenceTreeNode> orderedSubtreeMatchNodes2 = getCDTNodesInBreadthFirstOrder(CDTNodesList2,subTreeMatchNodes2);
 
-							// Generate CDTs from the matched nodes
-							ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTree(controlDependenceTreePDG1, orderedSubtreeMatchNodes1);
-							// insert unmatched CDT nodes under matched ones
-							for(ControlDependenceTreeNode node : controlDependenceTreePDG1.getNodesInBreadthFirstOrder()) {
-								if(!orderedSubtreeMatchNodes1.contains(node) && orderedSubtreeMatchNodes1.contains(node.getParent())) {
-									insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
-									orderedSubtreeMatchNodes1.add(node);
-								}
+						// Generate CDTs from the matched nodes
+						ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTree(controlDependenceTreePDG1, orderedSubtreeMatchNodes1);
+						// insert unmatched CDT nodes under matched ones
+						for(ControlDependenceTreeNode node : controlDependenceTreePDG1.getNodesInBreadthFirstOrder()) {
+							if(!orderedSubtreeMatchNodes1.contains(node) && orderedSubtreeMatchNodes1.contains(node.getParent())) {
+								insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
+								orderedSubtreeMatchNodes1.add(node);
 							}
-							ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTree(controlDependenceTreePDG2, orderedSubtreeMatchNodes2);
-							// insert unmatched CDT nodes under matched ones
-							for(ControlDependenceTreeNode node : controlDependenceTreePDG2.getNodesInBreadthFirstOrder()) {
-								if(!orderedSubtreeMatchNodes2.contains(node) && orderedSubtreeMatchNodes2.contains(node.getParent())) {
-									insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
-									orderedSubtreeMatchNodes2.add(node);
-								}
+						}
+						ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTree(controlDependenceTreePDG2, orderedSubtreeMatchNodes2);
+						// insert unmatched CDT nodes under matched ones
+						for(ControlDependenceTreeNode node : controlDependenceTreePDG2.getNodesInBreadthFirstOrder()) {
+							if(!orderedSubtreeMatchNodes2.contains(node) && orderedSubtreeMatchNodes2.contains(node.getParent())) {
+								insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
+								orderedSubtreeMatchNodes2.add(node);
 							}
-							LOGGER.info("Start mapping");
-							PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, 
-									controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, fullTreeMatch, null);
-							LOGGER.info("End mapping");
-							endThreadTime = threadMXBean.getCurrentThreadCpuTime();
-							endWallNanoTime = System.nanoTime();
+						}
+						LOGGER.info("Start mapping");
+						PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, 
+								controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, fullTreeMatch, null);
+						LOGGER.info("End mapping");
+						endThreadTime = threadMXBean.getCurrentThreadCpuTime();
+						endWallNanoTime = System.nanoTime();
 
-							PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
-							mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
-							mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
+						PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
+						mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
+						mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
 
-							pairInfo.addMapperInfo(mapperInfo);
-							pairInfo.setStatus(AnalysisStatus.NORMAL);
+						pairInfo.addMapperInfo(mapperInfo);
+						pairInfo.setStatus(AnalysisStatus.NORMAL);
 
-//						} else { // not matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())
-//							pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
-//						}
+						//						} else { // not matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())
+						//							pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
+						//						}
 					}
-					
+
 				}
 			}  
 			pairInfo.setNumberOfNodeComparisons(NodePairComparisonCache.getInstance().getMapSize());
@@ -1084,41 +1092,41 @@ public class Application implements IApplication {
 	}
 
 	private boolean isInside(ASTNode astNode, int startOffset, int endOffset, ICompilationUnit iCompilationUnit) {
-		
+
 		int astNodeStartPosition = astNode.getStartPosition();
 		int astNodeLength = astNode.getLength();
-		
+
 		// If the node is completely inside
 		if (astNodeStartPosition >= startOffset && astNodeStartPosition + astNodeLength <= endOffset)
 			return true;
-		
+
 		if (astNodeStartPosition >= startOffset && astNodeStartPosition <= endOffset) {
 			IDocument iDocument = CloneToolParser.getIDocument(iCompilationUnit);
 			try {
 				String realSourceCode = iDocument.get(astNodeStartPosition, endOffset - astNodeStartPosition);
 				String astNodeSourceCode = iDocument.get(astNodeStartPosition, astNodeLength);
-				
+
 				TextDiff td = new TextDiff();
 				LinkedList<Diff> diffs = td.diff_main(realSourceCode, astNodeSourceCode, false);
 				td.diff_cleanupSemantic(diffs);
-				
+
 				String commentRegularExpression = "(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)";
-				
+
 				boolean realSourceCodeFound = false;
 				for (Diff diff : diffs) {
 					switch (diff.operation) {
-						case EQUAL:
-							if (diff.text.equals(realSourceCode))
-								realSourceCodeFound = true;
+					case EQUAL:
+						if (diff.text.equals(realSourceCode))
+							realSourceCodeFound = true;
 						break;
-						case DELETE:
+					case DELETE:
+						return false;
+					case INSERT:
+						String filtered = diff.text.replaceAll(commentRegularExpression, "").replaceAll("\\s", "").replaceAll("\\}", "").replaceAll("\\)", "").replaceAll(";", "");
+						if(realSourceCodeFound && (filtered.isEmpty() || hasOnlyKeyWord(filtered)))
+							return true;
+						else
 							return false;
-						case INSERT:
-							String filtered = diff.text.replaceAll(commentRegularExpression, "").replaceAll("\\s", "").replaceAll("\\}", "").replaceAll("\\)", "").replaceAll(";", "");
-							if(realSourceCodeFound && (filtered.isEmpty() || hasOnlyKeyWord(filtered)))
-								return true;
-							else
-								return false;
 					}
 				}
 				return realSourceCodeFound;
@@ -1399,7 +1407,7 @@ public class Application implements IApplication {
 
 	private IMethod getIMethodWithSignature(IJavaProject jProject, IType type, String methodName, String methodSignature, int start, int end)
 			throws JavaModelException {
-		
+
 		SystemObject systemObject = ASTReader.getSystemObject();
 		List<IMethod> methods = new ArrayList<IMethod>();
 		if(type.exists()) {
@@ -1467,27 +1475,27 @@ public class Application implements IApplication {
 		return iMethod;
 	}
 
-//	private IMethod getIMethodWithSignature(IJavaProject jProject, IType type, String methodName, String methodSignature)
-//			throws JavaModelException {
-//
-//		SystemObject systemObject = ASTReader.getSystemObject();
-//		IMethod[] methods = type.getMethods();
-//		IMethod iMethod = null;
-//		for(IMethod method : methods) {
-//			if(/*method.getSignature().equals(methodSignature) && */method.getElementName().equals(methodName)) {
-//				//AbstractMethodDeclaration abstractMethodDeclaration = systemObject.getMethodObject(method);
-//				//MethodDeclaration methodAST = abstractMethodDeclaration.getMethodDeclaration();
-//				iMethod = method;
-//				break;
-//			}
-//		}
-//
-//		return iMethod;
-//	}
+	//	private IMethod getIMethodWithSignature(IJavaProject jProject, IType type, String methodName, String methodSignature)
+	//			throws JavaModelException {
+	//
+	//		SystemObject systemObject = ASTReader.getSystemObject();
+	//		IMethod[] methods = type.getMethods();
+	//		IMethod iMethod = null;
+	//		for(IMethod method : methods) {
+	//			if(/*method.getSignature().equals(methodSignature) && */method.getElementName().equals(methodName)) {
+	//				//AbstractMethodDeclaration abstractMethodDeclaration = systemObject.getMethodObject(method);
+	//				//MethodDeclaration methodAST = abstractMethodDeclaration.getMethodDeclaration();
+	//				iMethod = method;
+	//				break;
+	//			}
+	//		}
+	//
+	//		return iMethod;
+	//	}
 
-//	
-	
-		
+	//	
+
+
 
 	@Override
 	public void stop() {
