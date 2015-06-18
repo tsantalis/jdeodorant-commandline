@@ -198,11 +198,11 @@ public class CCFinderOutputParser extends CloneToolParser {
 			}
 	
 			try {
-				int startLine = iDocument.getLineOfOffset(beginPos);
+				int startLine = iDocument.getLineOfOffset(beginPos) + 1;
 				addLabel(row, ExcelFileColumns.START_LINE, startLine);
-				int endLine = iDocument.getLineOfOffset(endPos);
+				int endLine = iDocument.getLineOfOffset(endPos) + 1;
 				addLabel(row, ExcelFileColumns.END_LINE, endLine);
-				writeCoverageInfo(packageName, className, row, startLine + 1, endLine + 1);
+				writeCoverageInfo(packageName, className, row, startLine, endLine);
 			} catch (BadLocationException e) {
 				e.printStackTrace();
 			}
