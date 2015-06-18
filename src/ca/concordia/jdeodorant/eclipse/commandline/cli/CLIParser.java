@@ -157,6 +157,12 @@ public class CLIParser {
 				.withLongOpt("run-tests")
 				.withDescription("Run tests after applying each refactoring")
 				.hasOptionalArg().create("rt"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("log-to-file")
+				.withDescription("Create a log file from console output")
+				.hasOptionalArg().create("l"));
 
 
 		// create the Apache Commons CLI parser
@@ -255,13 +261,11 @@ public class CLIParser {
 
 	public void printHelp() {
 		HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp("ca.concordia.jdeodorant.eclipse.commandline",
-				options);
+		formatter.printHelp("ca.concordia.jdeodorant.eclipse.commandline", options);
 	}
 
 	public ApplicationMode getApplicationMode(ApplicationMode defaultMode) {
-		return ApplicationMode.valueOf(getValue("mode", defaultMode.toString())
-				.toUpperCase());
+		return ApplicationMode.valueOf(getValue("mode", defaultMode.toString()).toUpperCase());
 	}
 
 	public String getProjectName() {
@@ -312,8 +316,12 @@ public class CLIParser {
 	public String getClassFolder() {
 		return getValue("cf");
 	}
-	
+
 	public boolean runTests() {
 		return hasOption("rt");
+	}
+
+	public boolean hasLogToFile() {
+		return hasOption("l");
 	}
 }

@@ -41,13 +41,32 @@ import ca.concordia.jdeodorant.eclipse.commandline.utility.IOHelper;
 import ca.concordia.jdeodorant.eclipse.commandline.utility.SourceDirectoryUtility;
 
 public class ApplicationRunner extends JavaLaunchDelegate {
+	public enum TestReportFileType {
+
+		ORIGINAL(ORIGINAL_TEST_REPORT_CSV_FILE_NAME),
+		AFTER_REFACTORING(TEST_REPORT_AFTER_REFACTORING_CSV);
+
+		private String fileName;
+
+		private TestReportFileType(String fileName) {
+			this.fileName = fileName;
+		}
+
+		@Override
+		public String toString() {
+			return fileName;
+		}
+	}
+
+	private static final String COVERAGE_REPORT_CSV_FILE_NAME = "coverage_report.csv";
+	private static final String ORIGINAL_TEST_REPORT_CSV_FILE_NAME = "test_report.csv";
+	private static final String TEST_REPORT_AFTER_REFACTORING_CSV = "test_report_offset.csv";
 	private static final String JUNIT_LAUNCH_CONFIGURATION_TYPE = "org.eclipse.jdt.junit.launchconfig";
 	private static final String JACOCO_EXEC_FILE = "/jacoco.exec";
 	private static final String JACOCO_AGENT = "/lib/jacocoagent.jar";
 	private static final String COVERAGE_JAR = "/lib/code-coverage-0.1-jar-with-dependencies.jar";
 	private static final String LAUNCH_MAIN_TYPE_NAME_TESTS = "TestRunner";
 	private static final String LAUNCH_MAIN_TYPE_NAME_COVERAGE_REPORT = "CoverageRunner";
-	public static final String REPORT_DIRECTORY_SYSTEM_PROPERTY_KEY = "reportDirctory";
 
 	private final IJavaProject jProject;
 	private final String classFolder;
@@ -326,7 +345,7 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 
 	public static List<LineCoverage> readCoverageFile(String pathToReportFolder) {
 		List<LineCoverage> lineCoverageList = new ArrayList<>();
-		List<String> lines = IOHelper.readFileByLine(pathToReportFolder + "/coverage_report.csv");
+		List<String> lines = IOHelper.readFileByLine(pathToReportFolder + "/" + COVERAGE_REPORT_CSV_FILE_NAME);
 		for (int i = 1; i < lines.size(); i++) {
 			String line = lines.get(i);
 			String[] values = line.split(",");
@@ -335,9 +354,9 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		return lineCoverageList;
 	}
 
-	public static TestReportResults readTestFile(String pathToReportFolder) {
+	public static TestReportResults readTestFile(String pathToReportFolder, TestReportFileType fileType) {
 		TestReportResults testReportList = new TestReportResults();
-		List<String> lines = IOHelper.readFileByLine(pathToReportFolder + "/test_report.csv");
+		List<String> lines = IOHelper.readFileByLine(pathToReportFolder + "/" + fileType);
 		for (int i = 1; i < lines.size(); i++) {
 			String line = lines.get(i);
 			String[] values = line.split(",");

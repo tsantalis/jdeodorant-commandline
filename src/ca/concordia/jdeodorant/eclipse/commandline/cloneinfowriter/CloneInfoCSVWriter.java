@@ -14,26 +14,24 @@ import java.util.List;
 import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
 
 public class CloneInfoCSVWriter extends CloneInfoWriter {
-	
+
 	private static final String SEPARATOR = "|";
-	
+
 	private static final String GLOBAL_CSV_FILE_NAME = "report.csv";
 	private static final String PRECOND_VIOLATIONS_FILE_NAME = "precondviolations.csv";
 	private static final String MAPPERS_FILE_NAME = "trees.csv";
 	private static final String COMPILE_ERRORS_FILE_NAME = "compileerrors.csv";
 	private static final String TEST_DIFFERENCES_FILE_NAME = "testdifferences.csv";
 	private static final String GAPS_INFO_FILE_NAME = "gapsinfo.csv";
-		
+
 	private final List<String> mainCSVLines = new ArrayList<>();
 	private final List<String> mappersCSVLines = new ArrayList<>();
 	private final List<String> preconditionViolationsLines = new ArrayList<>();
 	private final List<String> compileErrorsLines = new ArrayList<>();
 	private final List<String> testReportDifferencesLines = new ArrayList<>();
 	private final List<String> gapsInfoLines = new ArrayList<>();
-	
+
 	public static final String PATH_TO_CSV_FILES = "";
-
-
 
 	public CloneInfoCSVWriter(String outputFolder, String projectName, String fileNamePrefix) {
 		super(outputFolder + "/" + PATH_TO_CSV_FILES, projectName, fileNamePrefix);
@@ -44,7 +42,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		mainCSVLines.add("GroupID|PairID|ClonePairLocation|IsTestCode|" +
 				"#StatementsInCloneFragment1|#StatementsInCloneFragment2|#NodeComparisons|#PDGNodesInMethod1|#PDGNodesInMethod2|" +
 				"#RefactorableSubtrees|SubtreeMatchingWallNanoTime|Status");
-		mappersCSVLines.add("GroupID|PairID|TreeID|CloneType|PDGMappingWallNanoTime|#PreconditionViolations|#MappedStatements|" + 
+		mappersCSVLines.add("GroupID|PairID|TreeID|CloneType|PDGMappingWallNanoTime|#PreconditionViolations|#MappedStatements|" +
 				"#UnMappedStatements1|#UnMappedStatements2|#Differences|RefactoringWasOK|TestsFailedAfterRefactoring|HadCompileErrorsAfterRefactoring");
 		preconditionViolationsLines.add("GroupID|PairID|TreeID|PreconditionViolationType");
 		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
@@ -54,9 +52,9 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 
 	@Override
 	public void writeCloneInfo(ClonePairInfo pairInfo) {
-		
+
 		StringBuilder line = new StringBuilder();
-		
+
 		line.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
 		line.append(pairInfo.getClonePairID()).append(SEPARATOR);
 		line.append(pairInfo.getLocation().ordinal()).append(SEPARATOR);
@@ -70,7 +68,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		line.append(pairInfo.getSubtreeMatchingWallNanoTime()).append(SEPARATOR);
 		line.append(pairInfo.getStatus().ordinal());
 		mainCSVLines.add(line.toString());
-		
+
 		int treeID = 0;
 		for (PDGSubTreeMapperInfo mapperInfo : pairInfo.getPDFSubTreeMappersInfoList()) {
 			treeID++;
@@ -86,14 +84,14 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 			line.append(mapperInfo.getMapper().getRemainingNodesG2().size()).append(SEPARATOR);
 			if (mapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null)
 				line.append(mapperInfo.getMapper().getNodeDifferences().size());
-			else 
+			else
 				line.append("N/A");
 			line.append(SEPARATOR);
 			line.append(mapperInfo.getRefactoringWasOK()).append(SEPARATOR);
 			line.append(mapperInfo.testsFailedAfterRefactoring()).append(SEPARATOR);
 			line.append(mapperInfo.getHasCompileErrorsAfterRefactoring());
 			mappersCSVLines.add(line.toString());
-			
+
 			for (PreconditionViolation pv : mapperInfo.getMapper().getPreconditionViolations()) {
 				line = new StringBuilder();
 				line.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
@@ -102,7 +100,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				line.append(pv.getType().ordinal());
 				preconditionViolationsLines.add(line.toString());
 			}
-			
+
 			for (String fileHavingCompileError : mapperInfo.getFilesHavingCompileError()) {
 				StringBuilder compileErrorsLine = new StringBuilder();
 				compileErrorsLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
@@ -111,7 +109,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				compileErrorsLine.append(fileHavingCompileError);
 				compileErrorsLines.add(compileErrorsLine.toString());
 			}
-			
+
 			for (TestReportDifference testReportDifference : mapperInfo.getTestDifferences()) {
 				StringBuilder testReportDifferencesLine = new StringBuilder();
 				testReportDifferencesLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
@@ -120,7 +118,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				testReportDifferencesLine.append(testReportDifference.toString());
 				testReportDifferencesLines.add(testReportDifferencesLine.toString());
 			}
-			
+
 			for (PDGNodeBlockGap pdgNodeBlockGap : mapperInfo.getMapper().getRefactorableBlockGaps()) {
 				StringBuilder gapInfoLine = new StringBuilder();
 				gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
@@ -128,10 +126,10 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				gapInfoLine.append(treeID).append(SEPARATOR);
 				gapInfoLine.append("block").append(SEPARATOR);
 				gapInfoLine.append(pdgNodeBlockGap.getParameterBindings().size()).append(SEPARATOR);
-				gapInfoLine.append(pdgNodeBlockGap.getReturnedVariableBinding());
+				gapInfoLine.append(pdgNodeBlockGap.getReturnedVariableBinding().toString());
 				gapsInfoLines.add(gapInfoLine.toString());
 			}
-			
+
 			for (PDGExpressionGap pdgExpressionGap : mapperInfo.getMapper().getRefactorableExpressionGaps()) {
 				StringBuilder gapInfoLine = new StringBuilder();
 				gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
@@ -140,18 +138,21 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				gapInfoLine.append("expression").append(SEPARATOR);
 				gapInfoLine.append(pdgExpressionGap.getParameterBindings().size()).append(SEPARATOR);
 				// TODO: type of the return type for an expression gap
-				gapInfoLine.append(""); 
+				gapInfoLine.append("");
 				gapsInfoLines.add(gapInfoLine.toString());
 			}
-			
+
 		}
 	}
-	
+
 	/**
 	 * Writes one line per each object in the given List.
+	 * 
 	 * @param lines
 	 * @param path
-	 * @param append If set to true, we skip the first line in the List (the header line)
+	 * @param append
+	 *            If set to true, we skip the first line in the List (the header
+	 *            line)
 	 */
 	public static void writeLinesToFile(List<?> lines, String path, boolean append) {
 		try {
@@ -193,6 +194,5 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		writeLinesToFile(testReportDifferencesLines, filePrefix + TEST_DIFFERENCES_FILE_NAME, append);
 		writeLinesToFile(gapsInfoLines, filePrefix + GAPS_INFO_FILE_NAME, append);
 	}
-	
-	
+
 }

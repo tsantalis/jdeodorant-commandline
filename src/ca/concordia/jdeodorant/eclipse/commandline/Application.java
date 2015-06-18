@@ -91,8 +91,8 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import ca.concordia.jdeodorant.eclipse.commandline.ApplicationRunner.TestReportFileType;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser.ApplicationMode;
 import ca.concordia.jdeodorant.eclipse.commandline.cloneinfowriter.CloneInfoCSVWriter;
@@ -110,11 +110,12 @@ import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserFactor
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserFactory.CloneToolParserType;
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.ExcelFileColumns;
 import ca.concordia.jdeodorant.eclipse.commandline.test.MatchingSubtreesTest;
+import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
 
 @SuppressWarnings("restriction")
 public class Application implements IApplication {
-
-	private static Logger LOGGER = LoggerFactory.getLogger(Application.class);
+	
+	private static Logger LOGGER = FileLogger.getLogger(Application.class);
 	private static IJavaProject jProject;
 	private static CLIParser cliParser;
 
@@ -139,7 +140,10 @@ public class Application implements IApplication {
 			}
 
 			File excelFile = new File(cliParser.getExcelFilePath());
-			//			addResourcePaths(jProject, excelFile);
+			
+			if (cliParser.hasLogToFile()) {
+				FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
+			}
 
 			int startFrom = cliParser.getStartingRow();
 			boolean appendResults = cliParser.getAppendResults();
@@ -225,7 +229,7 @@ public class Application implements IApplication {
 
 		TestReportResults originalTestReport = null;
 		if (cliParser.runTests() || cliParser.hasCoverageReport())
-			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent());
+			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.ORIGINAL);
 
 		/*
 		 * If we have to append the results, first we check to see 
@@ -535,7 +539,9 @@ public class Application implements IApplication {
 												LOGGER.info("Started running unit tests");
 												new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
 												LOGGER.info("Finished running unit tests");
-												TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent());
+												LOGGER.info("Reading unit tests reports file");
+												TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.AFTER_REFACTORING);
+												LOGGER.info("Comparing test results");
 												List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
 												if (compareTestResults.size() != 0) {
 													LOGGER.warn("Tests failed after refactoring");
@@ -600,11 +606,6 @@ public class Application implements IApplication {
 								cloneGroupID + "-" + clonePairInfo.getClonePairID(),
 								clonePairInfo.getRefactorable() ? Colour.LIGHT_GREEN : Colour.RED);
 
-						//copyWorkbook.write();
-						//copyWorkbook.close();
-
-						//copyWorkbook = Workbook.getWorkbook(copyWorkBookFile);
-						//copySheet = copyWorkbook.getSheet(0);
 					}
 					pdgArray[firstCloneNumber] = null;
 				}

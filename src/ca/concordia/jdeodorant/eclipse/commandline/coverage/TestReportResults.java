@@ -27,7 +27,12 @@ public class TestReportResults {
 		
 		@Override
 		public String toString() {
-			return testReport + System.lineSeparator() + originalTestReport;
+			String originalTestResultText = "null", newTestResultText = "null";
+			if (originalTestReport != null)
+				originalTestResultText = originalTestReport.getTestResult().toString();
+			if (testReport != null)
+				newTestResultText = testReport.getTestResult().toString();
+			return String.format("%s -> %s", originalTestResultText, newTestResultText);
 		}
 		
 	}
@@ -35,7 +40,12 @@ public class TestReportResults {
 	private final Map<String, TestReport> testResults = new HashMap<>();
 	
 	public void addTestResult(TestReport testReport) {
-		testResults.put(testReport.getClassName() + "#" + testReport.getMethodName(), testReport);
+		String key = testReport.getClassName() + "#" + testReport.getMethodName();
+		if (!testResults.containsKey(key)) {
+			testResults.put(key, testReport);
+		} else {
+			throw new RuntimeException(String.format("Test %s already exists in the results", key));
+		}
 	}
 
 	public boolean testResultsEqual(TestReportResults originalTestResults) {
@@ -50,7 +60,7 @@ public class TestReportResults {
 	}
 
 	public List<TestReportDifference> compareTestResults(TestReportResults originalTestResults) {
-		List<TestReportDifference> toReturn = new ArrayList<TestReportResults.TestReportDifference>();
+		List<TestReportDifference> toReturn = new ArrayList<>();
 		for (String key : testResults.keySet()) {
 			
 			TestReport testReport = testResults.get(key);
