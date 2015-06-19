@@ -11,6 +11,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jdt.core.dom.ITypeBinding;
+
 import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
 
 public class CloneInfoCSVWriter extends CloneInfoWriter {
@@ -126,7 +128,8 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				gapInfoLine.append(treeID).append(SEPARATOR);
 				gapInfoLine.append("block").append(SEPARATOR);
 				gapInfoLine.append(pdgNodeBlockGap.getParameterBindings().size()).append(SEPARATOR);
-				gapInfoLine.append(pdgNodeBlockGap.getReturnedVariableBinding().toString());
+				ITypeBinding returnType = pdgNodeBlockGap.getReturnType();
+				gapInfoLine.append(returnType != null ? returnType.getQualifiedName() : "void");
 				gapsInfoLines.add(gapInfoLine.toString());
 			}
 
@@ -137,8 +140,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				gapInfoLine.append(treeID).append(SEPARATOR);
 				gapInfoLine.append("expression").append(SEPARATOR);
 				gapInfoLine.append(pdgExpressionGap.getParameterBindings().size()).append(SEPARATOR);
-				// TODO: type of the return type for an expression gap
-				gapInfoLine.append("");
+				gapInfoLine.append(pdgExpressionGap.getReturnType().getQualifiedName());
 				gapsInfoLines.add(gapInfoLine.toString());
 			}
 
