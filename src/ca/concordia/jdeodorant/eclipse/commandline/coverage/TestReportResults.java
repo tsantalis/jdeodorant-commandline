@@ -28,11 +28,18 @@ public class TestReportResults {
 		@Override
 		public String toString() {
 			String originalTestResultText = "null", newTestResultText = "null";
-			if (originalTestReport != null)
+			String methodName = "";
+			if (originalTestReport != null) {
 				originalTestResultText = originalTestReport.getTestResult().toString();
-			if (testReport != null)
+				methodName = originalTestReport.getClassName() + "#" + originalTestReport.getMethodName();
+			}
+			if (testReport != null) {
 				newTestResultText = testReport.getTestResult().toString();
-			return String.format("%s -> %s", originalTestResultText, newTestResultText);
+				if ("".equals(methodName))
+					methodName = testReport.getClassName() + "#" + testReport.getMethodName();
+			}
+			
+			return String.format("%s : %s -> %s", methodName , originalTestResultText, newTestResultText);
 		}
 		
 	}
