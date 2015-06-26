@@ -24,14 +24,16 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 	private static final String MAPPERS_FILE_NAME = "trees.csv";
 	private static final String COMPILE_ERRORS_FILE_NAME = "compileerrors.csv";
 	private static final String TEST_DIFFERENCES_FILE_NAME = "testdifferences.csv";
-	private static final String GAPS_INFO_FILE_NAME = "gapsinfo.csv";
+	private static final String EXPRESSION_GAPS_INFO_FILE_NAME = "exprgapsinfo.csv";
+	private static final String BLOCK_GAPS_INFO_FILE_NAME = "blockgapsinfo.csv";
 
 	private final List<String> mainCSVLines = new ArrayList<>();
 	private final List<String> mappersCSVLines = new ArrayList<>();
 	private final List<String> preconditionViolationsLines = new ArrayList<>();
 	private final List<String> compileErrorsLines = new ArrayList<>();
 	private final List<String> testReportDifferencesLines = new ArrayList<>();
-	private final List<String> gapsInfoLines = new ArrayList<>();
+	private final List<String> expressionGapsInfoLines = new ArrayList<>();
+	private final List<String> blockGapsInfoLines = new ArrayList<>();
 
 	public static final String PATH_TO_CSV_FILES = "";
 
@@ -49,7 +51,8 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		preconditionViolationsLines.add("GroupID|PairID|TreeID|PreconditionViolationType");
 		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
 		testReportDifferencesLines.add("GroupID|PairID|TreeID|TestDifference");
-		gapsInfoLines.add("GroupID|PairID|TreeID|GapType|#Params|ReturnType");
+		expressionGapsInfoLines.add("GroupID|PairID|TreeID|#Params|ReturnType");
+		blockGapsInfoLines.add("GroupID|PairID|TreeID|#Params|ReturnType|#ThrownExceptions|#Statements1|#Statements2");
 	}
 
 	@Override
@@ -121,27 +124,32 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				testReportDifferencesLines.add(testReportDifferencesLine.toString());
 			}
 
-			for (PDGNodeBlockGap pdgNodeBlockGap : mapperInfo.getMapper().getRefactorableBlockGaps()) {
-				StringBuilder gapInfoLine = new StringBuilder();
-				gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
-				gapInfoLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
-				gapInfoLine.append(treeID).append(SEPARATOR);
-				gapInfoLine.append("block").append(SEPARATOR);
-				gapInfoLine.append(pdgNodeBlockGap.getParameterBindings().size()).append(SEPARATOR);
-				ITypeBinding returnType = pdgNodeBlockGap.getReturnType();
-				gapInfoLine.append(returnType != null ? returnType.getQualifiedName() : "void");
-				gapsInfoLines.add(gapInfoLine.toString());
-			}
+			if (mapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null) {
 
-			for (PDGExpressionGap pdgExpressionGap : mapperInfo.getMapper().getRefactorableExpressionGaps()) {
-				StringBuilder gapInfoLine = new StringBuilder();
-				gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
-				gapInfoLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
-				gapInfoLine.append(treeID).append(SEPARATOR);
-				gapInfoLine.append("expression").append(SEPARATOR);
-				gapInfoLine.append(pdgExpressionGap.getParameterBindings().size()).append(SEPARATOR);
-				gapInfoLine.append(pdgExpressionGap.getReturnType().getQualifiedName());
-				gapsInfoLines.add(gapInfoLine.toString());
+				for (PDGNodeBlockGap pdgNodeBlockGap : mapperInfo.getMapper().getRefactorableBlockGaps()) {
+					StringBuilder gapInfoLine = new StringBuilder();
+					gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
+					gapInfoLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
+					gapInfoLine.append(treeID).append(SEPARATOR);
+					gapInfoLine.append(pdgNodeBlockGap.getParameterBindings().size()).append(SEPARATOR);
+					ITypeBinding returnType = pdgNodeBlockGap.getReturnType();
+					gapInfoLine.append(returnType != null ? returnType.getQualifiedName() : "void").append(SEPARATOR);
+					gapInfoLine.append(pdgNodeBlockGap.getThrownExceptions().size()).append(SEPARATOR);
+					gapInfoLine.append(pdgNodeBlockGap.getNodesG1().size()).append(SEPARATOR);
+					gapInfoLine.append(pdgNodeBlockGap.getNodesG2().size());
+					blockGapsInfoLines.add(gapInfoLine.toString());
+				}
+
+				for (PDGExpressionGap pdgExpressionGap : mapperInfo.getMapper().getRefactorableExpressionGaps()) {
+					StringBuilder gapInfoLine = new StringBuilder();
+					gapInfoLine.append(pairInfo.getCloneGroupID()).append(SEPARATOR);
+					gapInfoLine.append(pairInfo.getClonePairID()).append(SEPARATOR);
+					gapInfoLine.append(treeID).append(SEPARATOR);
+					gapInfoLine.append(pdgExpressionGap.getParameterBindings().size()).append(SEPARATOR);
+					gapInfoLine.append(pdgExpressionGap.getReturnType().getQualifiedName());
+					expressionGapsInfoLines.add(gapInfoLine.toString());
+				}
+
 			}
 
 		}
@@ -194,7 +202,8 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		writeLinesToFile(preconditionViolationsLines, filePrefix + PRECOND_VIOLATIONS_FILE_NAME, append);
 		writeLinesToFile(compileErrorsLines, filePrefix + COMPILE_ERRORS_FILE_NAME, append);
 		writeLinesToFile(testReportDifferencesLines, filePrefix + TEST_DIFFERENCES_FILE_NAME, append);
-		writeLinesToFile(gapsInfoLines, filePrefix + GAPS_INFO_FILE_NAME, append);
+		writeLinesToFile(expressionGapsInfoLines, filePrefix + EXPRESSION_GAPS_INFO_FILE_NAME, append);
+		writeLinesToFile(blockGapsInfoLines, filePrefix + BLOCK_GAPS_INFO_FILE_NAME, append);
 	}
 
 }
