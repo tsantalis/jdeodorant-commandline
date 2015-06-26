@@ -71,37 +71,39 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 		
 		int refactorableCount = 0;
 		for (PDGSubTreeMapperInfo mapperInfo : pairInfo.getPDFSubTreeMappersInfoList())
-			if (mapperInfo.isRefactorable())
+			if (mapperInfo.getRefactoringWasOK())
 				refactorableCount++;
-		
+
 		String templateFileText = templateText;
-		String html = templateFileText.substring(0, templateFileText.indexOf(START_OF_REPEATING_PART))
-				.replace("@DiffTableRows", diffTableHTML)
-				.replace("@FirstCode", escapeHTML(pairInfo.getSourceCodeFirst()))
-				.replace("@SecondCode", escapeHTML(pairInfo.getSourceCodeSecond()))
-				.replace("@FirstRealCodeFile", CloneToolParser.CODE_FRAGMENTS_TXT_FILES_FOLDER_NAME + "/" + pairInfo.getCloneGroupID() + "-" + pairInfo.getCloneFragment1ID() + ".txt")
-				.replace("@SecondRealCodeFile", CloneToolParser.CODE_FRAGMENTS_TXT_FILES_FOLDER_NAME + "/" + pairInfo.getCloneGroupID() + "-" + pairInfo.getCloneFragment1ID() + ".txt")
-				.replace("@Title", pairInfo.getCloneGroupID() + "-" + pairInfo.getClonePairID())
-				.replace("@FilePath1", pairInfo.getContainingFileFirst())
-				.replace("@MethodName1", pairInfo.getFirstMethodSignature())
-				.replace("@FilePath2", pairInfo.getContainingFileSecond())
-				.replace("@MethodName2", pairInfo.getSecondMethodSignature())
-				.replace("@ASTNodes1", String.valueOf(pairInfo.getNumberOfCloneStatementsInFirstCodeFragment()))
-				.replace("@ASTNodes2", String.valueOf(pairInfo.getNumberOfCloneStatementsInSecondCodeFragment()))
-				.replace("@OpportunitiesCount",String.valueOf(pairInfo.getPDFSubTreeMappersInfoList().size()))
-				.replace("@RefactorableOpportunitiesCount", String.valueOf(refactorableCount))
-				.replace("@NonRefactorableOpportunitiesCount", String.valueOf(pairInfo.getPDFSubTreeMappersInfoList().size() - refactorableCount))
-				.replace("@BottomUpMatchingTime", String.format("%.1f", pairInfo.getSubtreeMatchingWallNanoTime() / 1000000F))
-				.replace("@NodeComparisons", String.valueOf(pairInfo.getNumberOfNodeComparisons()))
-				.replace("@ClonesLocation", pairInfo.getLocation() != null ? pairInfo.getLocation().getDescription() : "");
+		StringBuilder html = new StringBuilder(templateFileText.substring(0, templateFileText.indexOf(START_OF_REPEATING_PART)));
+		stringBuilderReplaceAll(html, "@DiffTableRows", diffTableHTML);
+		stringBuilderReplaceAll(html, "@FirstCode", escapeHTML(pairInfo.getSourceCodeFirst()));
+		stringBuilderReplaceAll(html, "@SecondCode", escapeHTML(pairInfo.getSourceCodeSecond()));
+		stringBuilderReplaceAll(html, "@FirstRealCodeFile", CloneToolParser.CODE_FRAGMENTS_TXT_FILES_FOLDER_NAME + "/" + pairInfo.getCloneGroupID() + "-" + pairInfo.getCloneFragment1ID() + ".txt");
+		stringBuilderReplaceAll(html, "@SecondRealCodeFile", CloneToolParser.CODE_FRAGMENTS_TXT_FILES_FOLDER_NAME + "/" + pairInfo.getCloneGroupID() + "-" + pairInfo.getCloneFragment1ID() + ".txt");
+		stringBuilderReplaceAll(html, "@Title", pairInfo.getCloneGroupID() + "-" + pairInfo.getClonePairID());
+		stringBuilderReplaceAll(html, "@FilePath1", pairInfo.getContainingFileFirst());
+		stringBuilderReplaceAll(html, "@MethodName1", pairInfo.getFirstMethodSignature());
+		stringBuilderReplaceAll(html, "@FilePath2", pairInfo.getContainingFileSecond());
+		stringBuilderReplaceAll(html, "@MethodName2", pairInfo.getSecondMethodSignature());
+		stringBuilderReplaceAll(html, "@ASTNodes1", String.valueOf(pairInfo.getNumberOfCloneStatementsInFirstCodeFragment()));
+		stringBuilderReplaceAll(html, "@ASTNodes2", String.valueOf(pairInfo.getNumberOfCloneStatementsInSecondCodeFragment()));
+		stringBuilderReplaceAll(html, "@OpportunitiesCount",String.valueOf(pairInfo.getPDFSubTreeMappersInfoList().size()));
+		stringBuilderReplaceAll(html, "@RefactorableOpportunitiesCount", String.valueOf(refactorableCount));
+		stringBuilderReplaceAll(html, "@NonRefactorableOpportunitiesCount", String.valueOf(pairInfo.getPDFSubTreeMappersInfoList().size() - refactorableCount));
+		stringBuilderReplaceAll(html, "@BottomUpMatchingTime", String.format("%.1f", pairInfo.getSubtreeMatchingWallNanoTime() / 1000000F));
+		stringBuilderReplaceAll(html, "@NodeComparisons", String.valueOf(pairInfo.getNumberOfNodeComparisons()));
+		stringBuilderReplaceAll(html, "@ClonesLocation", pairInfo.getLocation() != null ? pairInfo.getLocation().getDescription() : "");
 		
-		html +=  templateFileText.substring(templateFileText.indexOf(END_OF_REPEATING_PART) + END_OF_REPEATING_PART.length());
+		html.append(templateFileText.substring(templateFileText.indexOf(END_OF_REPEATING_PART) + END_OF_REPEATING_PART.length()));
 		
-		String repeatingPart = templateFileText.substring(
-				templateFileText.indexOf(START_OF_REPEATING_PART) + START_OF_REPEATING_PART.length(), 
-				templateFileText.indexOf(END_OF_REPEATING_PART));
+		StringBuilder repeatingPart = new StringBuilder(
+					templateFileText.substring(
+					templateFileText.indexOf(START_OF_REPEATING_PART) + START_OF_REPEATING_PART.length(), 
+					templateFileText.indexOf(END_OF_REPEATING_PART))
+				.replace(START_OF_REPEATING_PART, ""));
 		
-		String refactorableHTML = "", notrefactorableHTML = "";
+		StringBuilder refactorableHTML = new StringBuilder(), notrefactorableHTML = new StringBuilder();
 		for (PDGSubTreeMapperInfo mapperInfo : pairInfo.getPDFSubTreeMappersInfoList()) {
 			
 			PDGRegionSubTreeMapper mapper = mapperInfo.getMapper();
@@ -109,32 +111,45 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 			
 			List<CloneStructureNode> cloneMappingNodes = new ArrayList<>();
 			
-			String section = repeatingPart.replace(START_OF_REPEATING_PART, "")
-					.replace("@MappedCount",  maximumStateWithMinimumDifferences == null ? "0" : String.valueOf(maximumStateWithMinimumDifferences.getNodeMappingSize()))
-					.replace("@MappedTable", getMappedTableRows(mapper.getCloneStructureRoot(), cloneMappingNodes))      
-					.replace("@PreconditionViolationsCount", String.valueOf(mapper.getPreconditionViolations().size()))
-					.replace("@PreconditionViolations", getPreconditionViolationsHTML(mapperInfo))
-					.replace("@MappingTime", String.format("%.1f", mapperInfo.getWallNanoTimeElapsedForMapping() / 1000000F))
-					.replace("@UnmappedCount1", String.valueOf(mapper.getRemainingNodesG1().size()))
-					.replace("@UnmappedCount2", String.valueOf(mapper.getRemainingNodesG2().size()))
-					.replace("@CloneType", mapper.getCloneType().toString());                                   
+			StringBuilder section = new StringBuilder(repeatingPart);
+			stringBuilderReplaceAll(section, "@MappedCount",  maximumStateWithMinimumDifferences == null ? "0" : String.valueOf(maximumStateWithMinimumDifferences.getNodeMappingSize()));
+			stringBuilderReplaceAll(section, "@MappedTable", getMappedTableRows(mapper.getCloneStructureRoot(), cloneMappingNodes));      
+			stringBuilderReplaceAll(section, "@PreconditionViolationsCount", String.valueOf(mapper.getPreconditionViolations().size()));
+			stringBuilderReplaceAll(section, "@PreconditionViolations", getPreconditionViolationsHTML(mapperInfo));
+			stringBuilderReplaceAll(section, "@MappingTime", String.format("%.1f", mapperInfo.getWallNanoTimeElapsedForMapping() / 1000000F));
+			stringBuilderReplaceAll(section, "@UnmappedCount1", String.valueOf(mapper.getRemainingNodesG1().size()));
+			stringBuilderReplaceAll(section, "@UnmappedCount2", String.valueOf(mapper.getRemainingNodesG2().size()));
+			stringBuilderReplaceAll(section, "@CloneType", mapper.getCloneType().toString());                                   
 			
-			if (mapperInfo.isRefactorable())
-				refactorableHTML += section.replace("@RefactorableTitle", "<span class=\"refactorable\">{Refactorable}</span>");
-			else 
-				notrefactorableHTML += section.replace("@RefactorableTitle", "<span class=\"nonrefactorable\">{Non-refactorable}</span>");
+			if (mapperInfo.getRefactoringWasOK()) {
+				stringBuilderReplaceAll(section, "@RefactorableTitle", "<span class=\"refactorable\">{Refactorable}</span>");
+				refactorableHTML.append(section);
+			} else {
+				stringBuilderReplaceAll(section, "@RefactorableTitle", "<span class=\"nonrefactorable\">{Non-refactorable}</span>");
+				notrefactorableHTML.append(section);
+			}
 		}
 		
-		html = html.replace("@Refactorable", refactorableHTML).replace("@NotRefactorable", notrefactorableHTML);
+		stringBuilderReplaceAll(html, "@Refactorable", refactorableHTML.toString());
+		stringBuilderReplaceAll(html, "@NotRefactorable", notrefactorableHTML.toString());
 		
 
 		try {					
 			BufferedWriter writer = new BufferedWriter(new FileWriter(new File(outputFileSaveFolder + pairInfo.getCloneGroupID() + "-" + pairInfo.getClonePairID() + ".htm")));
-			writer.write(html);
+			writer.write(html.toString());
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void stringBuilderReplaceAll(StringBuilder builder, String from, String to) {
+		int index = builder.indexOf(from);
+	    while (index != -1) {
+	        builder.replace(index, index + from.length(), to);
+	        index += to.length(); // Move to the end of the replacement
+	        index = builder.indexOf(from, index);
+	    }
 	}
 
 	private static String escapeHTML(String html) {
@@ -369,26 +384,26 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 		StringBuilder toReturn = new StringBuilder();
 		
 		for (StyleRange range : ranges) {
-			String style = "";
+			StringBuilder style = new StringBuilder();
 			if (range.foreground != null)
-				style = String.format("color: rgb(%s, %s, %s);",
+				style.append(String.format("color: rgb(%s, %s, %s);",
 											range.foreground.getRed(),
 											range.foreground.getGreen(),
-											range.foreground.getBlue());
+											range.foreground.getBlue()));
 			
 			if (range.background != null)
-				style += String.format("background: rgb(%s, %s, %s);",
+				style.append(String.format("background: rgb(%s, %s, %s);",
 											range.background.getRed(),
 											range.background.getGreen(),
-											range.background.getBlue());
+											range.background.getBlue()));
 			
 			if (range.fontStyle == SWT.BOLD)
-				style += "font-weight: bold;";
+				style.append("font-weight: bold;");
 			if (range.fontStyle == SWT.ITALIC)
-				style += "font-style: italic;";
+				style.append("font-style: italic;");
 			
 			if (range.font != null && range.font.getFontData().length > 0)
-				style += String.format("font-family: '%s'", range.font.getFontData()[0].getName());
+				style.append(String.format("font-family: '%s'", range.font.getFontData()[0].getName()));
 			
 			toReturn.append(String.format("<span style=\"%s\">%s</span>", style, escapeHTML(styledString.getString().substring(range.start, range.start + range.length))));
 		}
@@ -493,7 +508,8 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 		td.diff_cleanupSemantic(diffs);
 		
 		
-		String firstDiff = "", secondDiff = "";
+		StringBuilder firstDiff = new StringBuilder(), 
+					  secondDiff = new StringBuilder();
 
 //		for (Diff ca.concordia.jdeodorant.eclipse.commandline.diff : diffs) {
 //			System.out.println(ca.concordia.jdeodorant.eclipse.commandline.diff);
@@ -502,41 +518,41 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 			
 			String text = diff.text.replaceAll("\r\n", "\n");
 			
-			String html = "<span class=\"@class\">";
-			html += text.replace("\n", "</span>" + "\n" + "<span class=\"@class\">");
-			html +=  "</span>";
+			StringBuilder html = new StringBuilder("<span class=\"@class\">");
+			html.append(text.replace("\n", "</span>\n<span class=\"@class\">"));
+			html.append("</span>");
 			
-			html = html.replaceAll("<span class=\"(.*)\"></span>", "");
+			html = new StringBuilder(html.toString().replaceAll("<span class=\"(.*)\"></span>", ""));
 			
 			int numberOfLineBreaks = diff.text.length() - diff.text.replace("\n", "").length();
 			
 			if (diff.operation == Operation.EQUAL) {
-				html = html.replace("@class", "normal");
-				firstDiff += html;
-				secondDiff += html;
+				html = new StringBuilder(html.toString().replace("@class", "normal"));
+				firstDiff.append(html);
+				secondDiff.append(html);
 			} else if (diff.operation == Operation.DELETE) {
-				firstDiff += html.replace("@class", "deleted");
+				firstDiff.append(html.toString().replace("@class", "deleted"));
 				for (int i = 0; i < numberOfLineBreaks; i++)
-					secondDiff += "\n";
+					secondDiff.append("\n");
 			} else if (diff.operation == Operation.INSERT) {
-				secondDiff += html.replace("@class", "inserted");	
+				secondDiff.append(html.toString().replace("@class", "inserted"));	
 				for (int i = 0; i < numberOfLineBreaks; i++)
-					firstDiff += "\n";
+					firstDiff.append("\n");
 				//(!"".equals(firstDiff) ? "\n" : "")
 			}			
 		}
-				
-		String[] linesFirst = (firstDiff).split("\n");
-		String[] linesSecond = (secondDiff).split("\n");
 		
-		String html = "";
+		String[] linesFirst = firstDiff.toString().split("\n");
+		String[] linesSecond = secondDiff.toString().split("\n");
+		
+		StringBuilder html = new StringBuilder();
 		int firstLine = 0, secondLine = 0;
 		for (int i = 0; i < Math.max(linesFirst.length, linesSecond.length); i++) {
 			
 			//if (linesFirst[i].trim().equals("") || linesSecond[i].trim().equals(""))
 			//	continue;
 			
-			html += "<tr class=\"coderow\">";
+			html.append("<tr class=\"coderow\">");
 			
 			String className = "";
 			if (i >= linesFirst.length || "".equals(linesFirst[i]) || "<span class=\"normal\"></span>".equals(linesFirst[i])) {
@@ -555,40 +571,40 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 			if (className.equals("gap") && className.equals(className2))
 				continue;
 			
-			html += String.format("<td class=\"lines %s\">", className);
+			html.append(String.format("<td class=\"lines %s\">", className));
 			
 			if (!"gap".equals(className))
-				html += (++firstLine);
+				html.append(++firstLine);
 			
-			html += "</td>";
-			html += String.format("<td class=\"%s\">", className);
+			html.append("</td>");
+			html.append(String.format("<td class=\"%s\">", className));
 			if (i < linesFirst.length) {
-				html += "<pre>" + linesFirst[i];
+				html.append("<pre>" + linesFirst[i]);
 				if (!"gap".equals(className) && i < linesFirst.length - 1)
-					html += "<span class=\"carr\">&crarr;</span>";
-				html += "</pre>";
+					html.append("<span class=\"carr\">&crarr;</span>");
+				html.append("</pre>");
 			}
-			html += "</td>";
+			html.append("</td>");
 			
-			html += "<td class=\"separator\"></td>";
+			html.append("<td class=\"separator\"></td>");
 			
-			html += String.format("<td class=\"lines %s\">", className2);
+			html.append(String.format("<td class=\"lines %s\">", className2));
 			
 			if (!"gap".equals(className2))
-				html += (++secondLine);
+				html.append(++secondLine);
 			
-			html += "</td>";
-			html += String.format("<td class=\"%s\"><pre>", className2);
+			html.append("</td>");
+			html.append(String.format("<td class=\"%s\"><pre>", className2));
 			if (i < linesSecond.length) {
-				html += "<pre>" + linesSecond[i];
+				html.append("<pre>" + linesSecond[i]);
 				if (!"gap".equals(className2) && i < linesSecond.length - 1)
-					html += "<span class=\"carr\">&crarr;</span>";
-				html += "</pre>";
+					html.append("<span class=\"carr\">&crarr;</span>");
+				html.append("</pre>");
 			}
-			html += "</pre></td>";
-			html += "</tr>" + System.lineSeparator();
+			html.append("</pre></td>");
+			html.append("</tr>" + System.lineSeparator());
 		}
-		return html;
+		return html.toString();
 	}
 	
 	private String readFile(String path, Charset encoding) throws IOException 
