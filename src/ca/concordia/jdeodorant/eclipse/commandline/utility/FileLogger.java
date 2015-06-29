@@ -33,7 +33,7 @@ public class FileLogger {
 		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 	    FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
 	    fileAppender.setContext(loggerContext);
-	    fileAppender.setName("css-analyzer");
+	    fileAppender.setName("eclipse-commandline");
 	    // set the file name
 	    fileAppender.setFile(filePath);
 	    fileAppender.setAppend(append);

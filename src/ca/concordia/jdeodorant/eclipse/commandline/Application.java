@@ -509,65 +509,67 @@ public class Application implements IApplication {
 
 						if (firstCloneCoverage > 0 || secondCloneCoverage > 0) {
 							for (PDGSubTreeMapperInfo pdgSubTreeMapperInfo : clonePairInfo.getPDFSubTreeMappersInfoList()) {
-								// Create a list with one mapper, because ExtractCloneRefactoring needs a list
-								List<DivideAndConquerMatcher> mappers = new ArrayList<>();
-								mappers.add(pdgSubTreeMapperInfo.getMapper());
+								if (pdgSubTreeMapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null) {
+									// Create a list with one mapper, because ExtractCloneRefactoring needs a list
+									List<DivideAndConquerMatcher> mappers = new ArrayList<>();
+									mappers.add(pdgSubTreeMapperInfo.getMapper());
 
-								ExtractCloneRefactoring refactoring = new ExtractCloneRefactoring(mappers);
-								refactoring.setExtractedMethodName("ExtractedMethod");
-								IProgressMonitor npm = new NullProgressMonitor();
-								try {
-									RefactoringStatus refStatus = refactoring.checkFinalConditions(npm);
+									ExtractCloneRefactoring refactoring = new ExtractCloneRefactoring(mappers);
+									refactoring.setExtractedMethodName("ExtractedMethod");
+									IProgressMonitor npm = new NullProgressMonitor();
+									try {
+										RefactoringStatus refStatus = refactoring.checkFinalConditions(npm);
 
-									if (refStatus.isOK()) {
-										pdgSubTreeMapperInfo.setRefactoringWasOK(true);
-										LOGGER.info("Started refactoring");
-										Change change = refactoring.createChange(npm);
-										Change undoChange = change.perform(npm);
-										LOGGER.info("Finished Refactoring");
-										List<IMarker> markers = buildProject(iJavaProject, npm);
-										// Check for compile errors
-										if (markers.size() > 0) {
-											for (IMarker marker : markers) {
-												//String message = marker.getAttributes().get("message").toString();
-												pdgSubTreeMapperInfo.addFileHavingCompileError(marker.getResource().getFullPath().toOSString());
-											}
-											LOGGER.warn("Compile errors occured during refactoring");
-										} else { 
-											if (cliParser.runTests() || cliParser.hasCoverageReport()) {
-												// Run tests here and see if they pass
-												LOGGER.info("Started running unit tests");
-												new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
-												LOGGER.info("Finished running unit tests");
-												LOGGER.info("Reading unit tests reports file");
-												TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.AFTER_REFACTORING);
-												LOGGER.info("Comparing test results");
-												List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
-												if (compareTestResults.size() != 0) {
-													LOGGER.warn("Tests failed after refactoring");
-													pdgSubTreeMapperInfo.setTestDifferences(compareTestResults);
-												} else {
-													LOGGER.info("Tests passed after refactoring");
+										if (refStatus.isOK()) {
+											pdgSubTreeMapperInfo.setRefactoringWasOK(true);
+											LOGGER.info("Started refactoring");
+											Change change = refactoring.createChange(npm);
+											Change undoChange = change.perform(npm);
+											LOGGER.info("Finished Refactoring");
+											List<IMarker> markers = buildProject(iJavaProject, npm);
+											// Check for compile errors
+											if (markers.size() > 0) {
+												for (IMarker marker : markers) {
+													//String message = marker.getAttributes().get("message").toString();
+													pdgSubTreeMapperInfo.addFileHavingCompileError(marker.getResource().getFullPath().toOSString());
+												}
+												LOGGER.warn("Compile errors occured during refactoring");
+											} else { 
+												if (cliParser.runTests() || cliParser.hasCoverageReport()) {
+													// Run tests here and see if they pass
+													LOGGER.info("Started running unit tests");
+													new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
+													LOGGER.info("Finished running unit tests");
+													LOGGER.info("Reading unit tests reports file");
+													TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.AFTER_REFACTORING);
+													LOGGER.info("Comparing test results");
+													List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
+													if (compareTestResults.size() != 0) {
+														LOGGER.warn("Tests failed after refactoring");
+														pdgSubTreeMapperInfo.setTestDifferences(compareTestResults);
+													} else {
+														LOGGER.info("Tests passed after refactoring");
+													}
 												}
 											}
-										}
 
-										LOGGER.info("Started undoing refactoring");
-										undoChange.perform(npm);
-										LOGGER.info("Finished undoing refactoring");
-										markers = buildProject(iJavaProject, npm);
-										if (markers.size() > 0) {
-											// Is it possible to have compile errors after undoing?
-											LOGGER.error("Compiler errors after undoing refactorings");
-										}
+											LOGGER.info("Started undoing refactoring");
+											undoChange.perform(npm);
+											LOGGER.info("Finished undoing refactoring");
+											markers = buildProject(iJavaProject, npm);
+											if (markers.size() > 0) {
+												// Is it possible to have compile errors after undoing?
+												LOGGER.error("Compiler errors after undoing refactorings");
+											}
 
-									} else {
-										pdgSubTreeMapperInfo.setRefactoringWasOK(false);
-										LOGGER.warn("Refactoring was not OK");
+										} else {
+											pdgSubTreeMapperInfo.setRefactoringWasOK(false);
+											LOGGER.warn("Refactoring was not OK");
+										}
+									} catch (MalformedTreeException mte) {
+										// Overlapping text edits
+										pdgSubTreeMapperInfo.addFileHavingCompileError("Overlapping text edits");
 									}
-								} catch (MalformedTreeException mte) {
-									// Overlapping text edits
-									pdgSubTreeMapperInfo.addFileHavingCompileError("Overlapping text edits");
 								}
 							}
 						} else {
