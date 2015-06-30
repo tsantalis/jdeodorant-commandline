@@ -163,6 +163,12 @@ public class CLIParser {
 				.withLongOpt("log-to-file")
 				.withDescription("Create a log file from console output")
 				.hasOptionalArg().create("l"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("group-ids")
+				.withDescription("A comma-separated list of clone group IDs to be analyzed. Other clone groups in the file will be skipped.")
+				.withValueSeparator(',').hasArgs().create("g"));
 
 
 		// create the Apache Commons CLI parser
@@ -195,9 +201,13 @@ public class CLIParser {
 	 * @return
 	 */
 	public int[] getCloneGroupIDsToSkip() {
+		return getIntArrayFromStringArrayForOption("skip-groups");
+	}
+
+	private int[] getIntArrayFromStringArrayForOption(String option) {
 		int[] toReturn = new int[] {};
 		String[] skippedCloneGroupsStringArray = cmdLine
-				.getOptionValues("skip-groups");
+				.getOptionValues(option);
 		if (skippedCloneGroupsStringArray != null) {
 			toReturn = new int[skippedCloneGroupsStringArray.length];
 			for (int i = 0; i < skippedCloneGroupsStringArray.length; i++) {
@@ -323,5 +333,9 @@ public class CLIParser {
 
 	public boolean hasLogToFile() {
 		return hasOption("l");
+	}
+	
+	public int[] getCloneGroupIDsToAnalyze() {
+		return getIntArrayFromStringArrayForOption("group-ids");
 	}
 }

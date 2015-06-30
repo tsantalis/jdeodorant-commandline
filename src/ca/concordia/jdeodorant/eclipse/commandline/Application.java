@@ -148,6 +148,7 @@ public class Application implements IApplication {
 			int startFrom = cliParser.getStartingRow();
 			boolean appendResults = cliParser.getAppendResults();
 			int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
+			int[] cloneGroupIdsToAnalyze = cliParser.getCloneGroupIDsToAnalyze();
 			String[] testPackages = cliParser.getTestPackages();
 			String[] testSourceFolders = cliParser.getTestSourceFolders();
 
@@ -163,7 +164,7 @@ public class Application implements IApplication {
 					throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
 				}
 
-				testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, testPackages, testSourceFolders);
+				testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
 				break;
 
 			default:
@@ -223,6 +224,7 @@ public class Application implements IApplication {
 			int startFromRow, 
 			boolean appendResults, 
 			int[] cloneGroupIDsToSkip,
+			int[] cloneGroupIDsToAnalyze,
 			String[] testPackages, String[] testSourceFolders) throws Exception {
 
 		LOGGER.info("Testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath());
@@ -263,6 +265,7 @@ public class Application implements IApplication {
 
 		// Sort the array containing clone group IDs to skip, in order to be able to do Binary Search
 		Arrays.sort(cloneGroupIDsToSkip);
+		Arrays.sort(cloneGroupIDsToAnalyze);
 
 		String projectName = iJavaProject.getElementName();
 
@@ -288,6 +291,24 @@ public class Application implements IApplication {
 							cloneGroupStartingRowNumber, cloneGroupID));
 					continue;
 				}
+				
+				if (cloneGroupIDsToAnalyze.length > 0) {
+					if (Arrays.binarySearch(cloneGroupIDsToAnalyze, cloneGroupID) < 0) {
+						if (cloneGroupID > cloneGroupIDsToAnalyze[cloneGroupIDsToAnalyze.length - 1]) {
+							// Just finish the loop
+							cloneGroupStartingRowNumber = numberOfRows;
+							continue;
+						} else {
+							if(cloneGroupStartingRowNumber + cloneGroupSize == numberOfRows) {
+								cloneGroupStartingRowNumber = numberOfRows;
+							} else { 
+								cloneGroupStartingRowNumber = cloneGroupStartingRowNumber + cloneGroupSize - 1;
+							}
+							continue;
+						}
+					}
+				}
+				
 				String cloneType = originalSheet.getCell(ExcelFileColumns.CLONE_GROUP_INFO.getColumnNumber(), cloneGroupStartingRowNumber).getContents(); 
 
 
@@ -564,7 +585,7 @@ public class Application implements IApplication {
 
 										} else {
 											pdgSubTreeMapperInfo.setRefactoringWasOK(false);
-											LOGGER.warn("Refactoring was not OK");
+											LOGGER.warn("Refactoring was not applied due to precondition violations");
 										}
 									} catch (MalformedTreeException mte) {
 										// Overlapping text edits
@@ -596,6 +617,7 @@ public class Application implements IApplication {
 									clonePairInfo.getNumberOfCloneStatementsInSecondCodeFragment());
 							copySheet.addCell(number);
 						}
+						
 
 						// Write the stuff to the HTML files and CSV files
 						for (CloneInfoWriter cloneInfoWriter : infoWriters)
