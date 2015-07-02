@@ -596,6 +596,8 @@ public class Application implements IApplication {
 						} else {
 							LOGGER.info("Did not apply refactoring on the current clone pair, because none of the clones is covered by unit tests");
 						}
+						
+						CompilationUnitCache.getInstance().releaseLock();
 
 						if (firstCloneNumber == 0) {
 
@@ -655,6 +657,7 @@ public class Application implements IApplication {
 		finally {
 			copyWorkbook.write();
 			copyWorkbook.close();
+			jProject.getProject().getWorkspace().save(false, new NullProgressMonitor());
 		}
 
 		LOGGER.info("Finished testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath() + ", output file: " + copyWorkBookFile.getAbsolutePath());
@@ -1112,7 +1115,7 @@ public class Application implements IApplication {
 			}  
 			pairInfo.setNumberOfNodeComparisons(NodePairComparisonCache.getInstance().getMapSize());
 			NodePairComparisonCache.getInstance().clearCache();
-			CompilationUnitCache.getInstance().releaseLock();
+
 		} else { // not methodObject1 != null && methodObject2 != null && methodObject1.getMethodBody() != null && methodObject2.getMethodBody() != null
 			pairInfo.setStatus(AnalysisStatus.NOT_ANALYZED);
 		}
