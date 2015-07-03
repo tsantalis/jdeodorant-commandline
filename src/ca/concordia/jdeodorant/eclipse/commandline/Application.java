@@ -116,7 +116,6 @@ import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
 public class Application implements IApplication {
 	
 	private static Logger LOGGER = FileLogger.getLogger(Application.class);
-	private static IJavaProject jProject;
 	private static CLIParser cliParser;
 
 	@Override
@@ -134,11 +133,14 @@ public class Application implements IApplication {
 
 			String projectName = cliParser.getProjectName();
 			// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
-			jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
+			IJavaProject jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
 			if (jProject == null) {
 				throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
 			}
 
+			IProject project = jProject.getProject();
+			project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
+			
 			File excelFile = new File(cliParser.getExcelFilePath());
 			
 			if (cliParser.hasLogToFile()) {
@@ -403,6 +405,8 @@ public class Application implements IApplication {
 				int numberOfRefactorablePairs = 0;
 
 				PDG[] pdgArray = new PDG[cloneGroupSize];
+				
+				boolean shouldRunTests = cliParser.runTests() || cliParser.hasCoverageReport();
 
 
 				for (int firstCloneNumber = 0; firstCloneNumber < cloneGroupSize - 1; firstCloneNumber++) {
@@ -528,7 +532,8 @@ public class Application implements IApplication {
 						if (clonePairInfo.getRefactorable())
 							numberOfRefactorablePairs++;
 
-						if (firstCloneCoverage > 0 || secondCloneCoverage > 0) {
+						boolean clonesCoveredByTests = firstCloneCoverage > 0 || secondCloneCoverage > 0;
+						if (!shouldRunTests || (shouldRunTests && clonesCoveredByTests)) {
 							for (PDGSubTreeMapperInfo pdgSubTreeMapperInfo : clonePairInfo.getPDFSubTreeMappersInfoList()) {
 								if (pdgSubTreeMapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null) {
 									// Create a list with one mapper, because ExtractCloneRefactoring needs a list
@@ -556,7 +561,7 @@ public class Application implements IApplication {
 												}
 												LOGGER.warn("Compile errors occured during refactoring");
 											} else { 
-												if (cliParser.runTests() || cliParser.hasCoverageReport()) {
+												if (shouldRunTests) {
 													// Run tests here and see if they pass
 													LOGGER.info("Started running unit tests");
 													new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
@@ -582,6 +587,8 @@ public class Application implements IApplication {
 												// Is it possible to have compile errors after undoing?
 												LOGGER.error("Compiler errors after undoing refactorings");
 											}
+											iJavaProject.getProject().deleteMarkers(null, true, IResource.DEPTH_INFINITE);
+											iJavaProject.getProject().clearHistory(new NullProgressMonitor());
 
 										} else {
 											pdgSubTreeMapperInfo.setRefactoringWasOK(false);
@@ -657,7 +664,7 @@ public class Application implements IApplication {
 		finally {
 			copyWorkbook.write();
 			copyWorkbook.close();
-			jProject.getProject().getWorkspace().save(false, new NullProgressMonitor());
+			iJavaProject.getProject().getWorkspace().save(true, new NullProgressMonitor());
 		}
 
 		LOGGER.info("Finished testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath() + ", output file: " + copyWorkBookFile.getAbsolutePath());
