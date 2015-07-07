@@ -467,6 +467,19 @@ public class Application implements IApplication {
 						int secondEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), secondCloneRow).getContents());
 						String secondSrcFolder = originalSheet.getCell(ExcelFileColumns.SOURCE_FOLDER.getColumnNumber(), secondCloneRow).getContents();
 						float secondCloneCoverage = Float.parseFloat(originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), secondCloneRow).getContents());
+						
+						// Check if two clones overlap, we will skip such a case
+						if (firstFullName.equals(secondFullName) &&
+								((firstStartOffset >= secondStartOffset && firstStartOffset <= secondEndOffset) ||
+								 (secondStartOffset >= firstStartOffset && secondStartOffset <= firstEndOffset)
+								)
+							) {
+							LOGGER.warn(String.format("Clones %s and %s in group %s overlap, skipping clone pair at rows %s-%s",
+									firstCloneNumber + 1, secondCloneNumber + 1,
+									cloneGroupID,
+									firstCloneRow + 1, secondCloneRow + 1));
+							continue;
+						}
 
 						if ("".equals(secondMethodSignature)) {
 							LOGGER.warn(String.format("No method could be found in file '%s' inside offsets %s to %s ," +
