@@ -1,5 +1,6 @@
 package ca.concordia.jdeodorant.eclipse.commandline.cloneinfowriter;
 
+import gr.uom.java.ast.decomposition.cfg.mapping.CloneRefactoringType;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGExpressionGap;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGNodeBlockGap;
 import gr.uom.java.ast.decomposition.cfg.mapping.precondition.PreconditionViolation;
@@ -47,7 +48,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				"#StatementsInCloneFragment1|#StatementsInCloneFragment2|#NodeComparisons|#PDGNodesInMethod1|#PDGNodesInMethod2|" +
 				"#RefactorableSubtrees|SubtreeMatchingWallNanoTime|Status");
 		mappersCSVLines.add("GroupID|PairID|TreeID|CloneType|PDGMappingWallNanoTime|#PreconditionViolations|#MappedStatements|" +
-				"#UnMappedStatements1|#UnMappedStatements2|#Differences|RefactoringWasOK|TestsFailedAfterRefactoring|HadCompileErrorsAfterRefactoring");
+				"#UnMappedStatements1|#UnMappedStatements2|#Differences|RefactoringWasOK|TestsFailedAfterRefactoring|HadCompileErrorsAfterRefactoring|CloneRefactoringType");
 		preconditionViolationsLines.add("GroupID|PairID|TreeID|PreconditionViolationType");
 		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
 		testReportDifferencesLines.add("GroupID|PairID|TreeID|TestDifference");
@@ -94,7 +95,12 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 			line.append(SEPARATOR);
 			line.append(mapperInfo.getRefactoringWasOK()).append(SEPARATOR);
 			line.append(mapperInfo.testsFailedAfterRefactoring()).append(SEPARATOR);
-			line.append(mapperInfo.getHasCompileErrorsAfterRefactoring());
+			line.append(mapperInfo.getHasCompileErrorsAfterRefactoring()).append(SEPARATOR);
+			CloneRefactoringType cloneRefactoringType = mapperInfo.getMapper().getCloneRefactoringType();
+			if (cloneRefactoringType != null)
+				line.append(cloneRefactoringType.ordinal());
+			else 
+				line.append(-1);
 			mappersCSVLines.add(line.toString());
 
 			for (PreconditionViolation pv : mapperInfo.getMapper().getPreconditionViolations()) {
