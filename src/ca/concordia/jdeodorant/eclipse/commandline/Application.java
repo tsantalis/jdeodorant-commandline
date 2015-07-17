@@ -1,25 +1,5 @@
 package ca.concordia.jdeodorant.eclipse.commandline;
 
-import gr.uom.java.ast.ASTReader;
-import gr.uom.java.ast.AbstractMethodDeclaration;
-import gr.uom.java.ast.ClassDeclarationObject;
-import gr.uom.java.ast.CompilationUnitCache;
-import gr.uom.java.ast.SystemObject;
-import gr.uom.java.ast.decomposition.cfg.CFG;
-import gr.uom.java.ast.decomposition.cfg.PDG;
-import gr.uom.java.ast.decomposition.cfg.PDGMethodEntryNode;
-import gr.uom.java.ast.decomposition.cfg.PDGNode;
-import gr.uom.java.ast.decomposition.cfg.mapping.BottomUpCDTMapper;
-import gr.uom.java.ast.decomposition.cfg.mapping.CompleteSubTreeMatch;
-import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeGenerator;
-import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNode;
-import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNodeMatchPair;
-import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGMapper;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
-import gr.uom.java.ast.decomposition.matching.NodePairComparisonCache;
-import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractCloneRefactoring;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -36,19 +16,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeSet;
-
-import jxl.Sheet;
-import jxl.Workbook;
-import jxl.format.Border;
-import jxl.format.BorderLineStyle;
-import jxl.format.Colour;
-import jxl.write.Formula;
-import jxl.write.Number;
-import jxl.write.WritableCellFormat;
-import jxl.write.WritableHyperlink;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
-import jxl.write.WriteException;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -111,6 +78,37 @@ import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserFactor
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.ExcelFileColumns;
 import ca.concordia.jdeodorant.eclipse.commandline.test.MatchingSubtreesTest;
 import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
+import gr.uom.java.ast.ASTReader;
+import gr.uom.java.ast.AbstractMethodDeclaration;
+import gr.uom.java.ast.ClassDeclarationObject;
+import gr.uom.java.ast.CompilationUnitCache;
+import gr.uom.java.ast.SystemObject;
+import gr.uom.java.ast.decomposition.cfg.CFG;
+import gr.uom.java.ast.decomposition.cfg.PDG;
+import gr.uom.java.ast.decomposition.cfg.PDGMethodEntryNode;
+import gr.uom.java.ast.decomposition.cfg.PDGNode;
+import gr.uom.java.ast.decomposition.cfg.mapping.BottomUpCDTMapper;
+import gr.uom.java.ast.decomposition.cfg.mapping.CompleteSubTreeMatch;
+import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeGenerator;
+import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNode;
+import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNodeMatchPair;
+import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGMapper;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
+import gr.uom.java.ast.decomposition.matching.NodePairComparisonCache;
+import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractCloneRefactoring;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.format.Border;
+import jxl.format.BorderLineStyle;
+import jxl.format.Colour;
+import jxl.write.Formula;
+import jxl.write.Number;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableHyperlink;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
 
 @SuppressWarnings("restriction")
 public class Application implements IApplication {
@@ -602,7 +600,6 @@ public class Application implements IApplication {
 											}
 											iJavaProject.getProject().deleteMarkers(null, true, IResource.DEPTH_INFINITE);
 											iJavaProject.getProject().clearHistory(new NullProgressMonitor());
-
 										} else {
 											pdgSubTreeMapperInfo.setRefactoringWasOK(false);
 											LOGGER.warn("Refactoring was not applied due to precondition violations");
@@ -611,6 +608,8 @@ public class Application implements IApplication {
 										// Overlapping text edits
 										pdgSubTreeMapperInfo.addFileHavingCompileError("Overlapping text edits");
 									}
+								} else {
+									LOGGER.info("No statements mapped");
 								}
 							}
 						} else {
@@ -907,6 +906,7 @@ public class Application implements IApplication {
 					ASTNodes2.add(astNode);	
 				}
 			}
+			
 
 			// Get the real offsets of the AST nodes being analyzed (inside the code fragments)
 			int minStart1 = Integer.MAX_VALUE;
