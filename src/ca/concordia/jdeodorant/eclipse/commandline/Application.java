@@ -29,6 +29,10 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.IJobChangeListener;
+import org.eclipse.core.runtime.jobs.IJobManager;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.equinox.app.IApplicationContext;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -135,7 +139,7 @@ public class Application implements IApplication {
 			if (jProject == null) {
 				throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
 			}
-
+			handleScheduledJobsByEclipse();
 			IProject project = jProject.getProject();
 			project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
 			
@@ -173,6 +177,52 @@ public class Application implements IApplication {
 		}
 
 		return IApplication.EXIT_OK;
+	}
+	
+	/**
+	 * This method will cancel following jobs to prevent memory leak by IndexManager and increasing execution performance
+	 * Debug Event Dispatch
+	 * Updating encoding settings.
+	 * Periodic workspace save.
+	 * Building workspace
+	 * Java indexing..
+	 * These jobs run automatically by Eclipse
+	 */
+	private void handleScheduledJobsByEclipse() {
+		IJobManager jobManager = Job.getJobManager();
+		jobManager.addJobChangeListener(new IJobChangeListener() {
+
+			@Override
+			public void sleeping(IJobChangeEvent jobChangeEvent) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void scheduled(IJobChangeEvent jobChangeEvent) {
+				jobChangeEvent.getJob().cancel();
+			}
+
+			@Override
+			public void running(IJobChangeEvent jobChangeEvent) {
+			}
+
+			@Override
+			public void done(IJobChangeEvent jobChangeEvent) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void awake(IJobChangeEvent jobChangeEvent) {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void aboutToRun(IJobChangeEvent jobChangeEvent) {
+			}
+		});
 	}
 
 	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) {
