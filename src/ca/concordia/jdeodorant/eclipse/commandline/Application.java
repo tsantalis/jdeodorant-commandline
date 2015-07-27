@@ -17,6 +17,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -641,7 +642,16 @@ public class Application implements IApplication {
 											}
 
 											LOGGER.info("Started undoing refactoring");
-											undoChange.perform(npm);
+											boolean shouldRetry = true;
+											do {
+												try {
+													undoChange.perform(npm);
+													shouldRetry = false;
+												} catch (ResourceException rex) {
+													LOGGER.warn("Exception while deleting resources, retrying...");
+													Thread.sleep(500);
+												}
+											} while (shouldRetry);
 											LOGGER.info("Finished undoing refactoring");
 											markers = buildProject(iJavaProject, npm);
 											if (markers.size() > 0) {
