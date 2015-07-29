@@ -1099,6 +1099,37 @@ public class Application implements IApplication {
 
 				long startThreadime = threadMXBean.getCurrentThreadCpuTime();
 				long startWallNanoTime = System.nanoTime();
+				
+				// Remove the CDT subtree nodes being part of an incomplete if-else-if chain
+				List<ControlDependenceTreeNode> subTreeCDTNodes1Copy = new ArrayList<ControlDependenceTreeNode>(subTreeCDTNodes1);
+				for(ControlDependenceTreeNode subTreeCDTNode1 : subTreeCDTNodes1Copy) {
+					if(subTreeCDTNode1.ifStatementInsideElseIfChain()) {
+						List<ControlDependenceTreeNode> ifParents = subTreeCDTNode1.getIfParents();
+						List<ControlDependenceTreeNode> elseIfChildren = subTreeCDTNode1.getElseIfChildren();
+						List<ControlDependenceTreeNode> treeChain = new ArrayList<ControlDependenceTreeNode>();
+						treeChain.addAll(ifParents);
+						treeChain.addAll(elseIfChildren);
+						if(!subTreeCDTNodes1Copy.containsAll(treeChain)) {
+							subTreeCDTNodes1.remove(subTreeCDTNode1);
+							subTreeCDTNodes1.removeAll(subTreeCDTNode1.getDescendants());
+						}
+					}
+				}
+				
+				List<ControlDependenceTreeNode> subTreeCDTNodes2Copy = new ArrayList<ControlDependenceTreeNode>(subTreeCDTNodes2);
+				for(ControlDependenceTreeNode subTreeCDTNode2 : subTreeCDTNodes2Copy) {
+					if(subTreeCDTNode2.ifStatementInsideElseIfChain()) {
+						List<ControlDependenceTreeNode> ifParents = subTreeCDTNode2.getIfParents();
+						List<ControlDependenceTreeNode> elseIfChildren = subTreeCDTNode2.getElseIfChildren();
+						List<ControlDependenceTreeNode> treeChain = new ArrayList<ControlDependenceTreeNode>();
+						treeChain.addAll(ifParents);
+						treeChain.addAll(elseIfChildren);
+						if(!subTreeCDTNodes2Copy.containsAll(treeChain)) {
+							subTreeCDTNodes2.remove(subTreeCDTNode2);
+							subTreeCDTNodes2.removeAll(subTreeCDTNode2.getDescendants());
+						}
+					}
+				}
 
 				// Create CDT subtree with containing only the filtered CDTNodes
 				ControlDependenceTreeNode controlDependenceSubTreePDG1X = generateControlDependenceSubTree(controlDependenceTreePDG1, subTreeCDTNodes1);
