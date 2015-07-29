@@ -140,7 +140,8 @@ public class Application implements IApplication {
 			if (jProject == null) {
 				throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
 			}
-			handleScheduledJobsByEclipse();
+			if (!cliParser.isDebuggingEnabled())
+				handleScheduledJobsByEclipse();
 			IProject project = jProject.getProject();
 			project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
 			

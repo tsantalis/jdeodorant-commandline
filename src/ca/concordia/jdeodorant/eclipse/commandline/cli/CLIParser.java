@@ -170,6 +170,11 @@ public class CLIParser {
 				.withDescription("A comma-separated list of clone group IDs to be analyzed. Other clone groups in the file will be skipped.")
 				.withValueSeparator(',').hasArgs().create("g"));
 
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("debugging-enabled")
+				.withDescription("Prevent Eclipse command-line tool to cancel jobs queued in Eclipse JobManager such as workbench job and etc.")
+				.hasOptionalArgs().create("de"));
 
 		// create the Apache Commons CLI parser
 		CommandLineParser parser = new BasicParser();
@@ -333,6 +338,10 @@ public class CLIParser {
 
 	public boolean hasLogToFile() {
 		return hasOption("l");
+	}
+	
+	public boolean isDebuggingEnabled() {
+		return hasOption("de");
 	}
 	
 	public int[] getCloneGroupIDsToAnalyze() {
