@@ -1099,99 +1099,135 @@ public class Application implements IApplication {
 
 				long startThreadime = threadMXBean.getCurrentThreadCpuTime();
 				long startWallNanoTime = System.nanoTime();
-
-				// Create CDT subtree with containing only the filtered CDTNodes
-				ControlDependenceTreeNode controlDependenceSubTreePDG1X = generateControlDependenceSubTree(controlDependenceTreePDG1, subTreeCDTNodes1);
-				ControlDependenceTreeNode controlDependenceSubTreePDG2X = generateControlDependenceSubTree(controlDependenceTreePDG2, subTreeCDTNodes2);
-
-				// Nodes of original CDTs in Breadth First order
-				List<ControlDependenceTreeNode> CDTNodesList1 = controlDependenceSubTreePDG1X.getNodesInBreadthFirstOrder();
-				List<ControlDependenceTreeNode> CDTNodesList2 = controlDependenceSubTreePDG2X.getNodesInBreadthFirstOrder();
-
-				// Do the bottom up mapping and get all the pairs of mapped CDT subtrees
-				BottomUpCDTMapper bottomUpCDTMapper = new BottomUpCDTMapper(iCompilationUnit1, iCompilationUnit2, controlDependenceSubTreePDG1X, controlDependenceSubTreePDG2X, false);
-
-				// Get the solutions
-				List<CompleteSubTreeMatch> bottomUpSubTreeMatches = bottomUpCDTMapper.getSolutions();
-
-				long endThreadTime = threadMXBean.getCurrentThreadCpuTime();
-				long endWallNanoTime = System.nanoTime();
-
-				pairInfo.setSubtreeMatchingTime(endThreadTime - startThreadime);
-				pairInfo.setSubtreeMatchingWallNanoTime(endWallNanoTime - startWallNanoTime);
-
-				if (bottomUpSubTreeMatches.size() == 0) {
-
-					pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
-
-				} else {
-
-					// For each solution in the bottom-up matching, do the PDG mapping 
-					for(CompleteSubTreeMatch subTreeMatch : bottomUpSubTreeMatches) {
-
-						// Time for mapping PDGs in the CDT nodes starts here
-						startThreadime = threadMXBean.getCurrentThreadCpuTime();
-						startWallNanoTime = System.nanoTime();
-
-						TreeSet<ControlDependenceTreeNodeMatchPair> matchPairs = new TreeSet<ControlDependenceTreeNodeMatchPair>(); 
-						List<ControlDependenceTreeNode>subTreeMatchNodes1 = new ArrayList<ControlDependenceTreeNode>();
-						List<ControlDependenceTreeNode>subTreeMatchNodes2 = new ArrayList<ControlDependenceTreeNode>();
-
-						/*
-						 * Filtering the nodes inside subTreeCDTNodes1 and subTreeCDTNodes2, keep only
-						 * the nodes in the clone fragments
-						 */
-						for (ControlDependenceTreeNodeMatchPair matchPair : subTreeMatch.getMatchPairs()) {
-							if(subTreeCDTNodes1.contains(matchPair.getNode1()) && subTreeCDTNodes2.contains(matchPair.getNode2())) {
-								subTreeMatchNodes1.add(matchPair.getNode1());
-								subTreeMatchNodes2.add(matchPair.getNode2());
-								matchPairs.add(matchPair);
-							}
+				
+				// Remove the CDT subtree nodes being part of an incomplete if-else-if chain
+				List<ControlDependenceTreeNode> subTreeCDTNodes1Copy = new ArrayList<ControlDependenceTreeNode>(subTreeCDTNodes1);
+				for(ControlDependenceTreeNode subTreeCDTNode1 : subTreeCDTNodes1Copy) {
+					if(subTreeCDTNode1.ifStatementInsideElseIfChain()) {
+						List<ControlDependenceTreeNode> ifParents = subTreeCDTNode1.getIfParents();
+						List<ControlDependenceTreeNode> elseIfChildren = subTreeCDTNode1.getElseIfChildren();
+						List<ControlDependenceTreeNode> treeChain = new ArrayList<ControlDependenceTreeNode>();
+						treeChain.addAll(ifParents);
+						treeChain.addAll(elseIfChildren);
+						if(!subTreeCDTNodes1Copy.containsAll(treeChain)) {
+							subTreeCDTNodes1.remove(subTreeCDTNode1);
+							subTreeCDTNodes1.removeAll(subTreeCDTNode1.getDescendants());
 						}
-
-						// If all the matched pairs are completely inside one of the code fragments 
-						//if(matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())) {
-						boolean fullTreeMatch = (matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size()));
-						// Get the nodes of the matched pairs in breadth first order
-						List<ControlDependenceTreeNode> orderedSubtreeMatchNodes1 = getCDTNodesInBreadthFirstOrder(CDTNodesList1,subTreeMatchNodes1);
-						List<ControlDependenceTreeNode> orderedSubtreeMatchNodes2 = getCDTNodesInBreadthFirstOrder(CDTNodesList2,subTreeMatchNodes2);
-
-						// Generate CDTs from the matched nodes
-						ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTree(controlDependenceTreePDG1, orderedSubtreeMatchNodes1);
-						// insert unmatched CDT nodes under matched ones
-						for(ControlDependenceTreeNode node : controlDependenceTreePDG1.getNodesInBreadthFirstOrder()) {
-							if(!orderedSubtreeMatchNodes1.contains(node) && orderedSubtreeMatchNodes1.contains(node.getParent())) {
-								insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
-								orderedSubtreeMatchNodes1.add(node);
-							}
-						}
-						ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTree(controlDependenceTreePDG2, orderedSubtreeMatchNodes2);
-						// insert unmatched CDT nodes under matched ones
-						for(ControlDependenceTreeNode node : controlDependenceTreePDG2.getNodesInBreadthFirstOrder()) {
-							if(!orderedSubtreeMatchNodes2.contains(node) && orderedSubtreeMatchNodes2.contains(node.getParent())) {
-								insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
-								orderedSubtreeMatchNodes2.add(node);
-							}
-						}
-						LOGGER.info("Start mapping");
-						PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, 
-								controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, fullTreeMatch, null);
-						LOGGER.info("End mapping");
-						endThreadTime = threadMXBean.getCurrentThreadCpuTime();
-						endWallNanoTime = System.nanoTime();
-
-						PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
-						mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
-						mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
-
-						pairInfo.addMapperInfo(mapperInfo);
-						pairInfo.setStatus(AnalysisStatus.NORMAL);
-
-						//						} else { // not matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())
-						//							pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
-						//						}
 					}
+				}
+				
+				List<ControlDependenceTreeNode> subTreeCDTNodes2Copy = new ArrayList<ControlDependenceTreeNode>(subTreeCDTNodes2);
+				for(ControlDependenceTreeNode subTreeCDTNode2 : subTreeCDTNodes2Copy) {
+					if(subTreeCDTNode2.ifStatementInsideElseIfChain()) {
+						List<ControlDependenceTreeNode> ifParents = subTreeCDTNode2.getIfParents();
+						List<ControlDependenceTreeNode> elseIfChildren = subTreeCDTNode2.getElseIfChildren();
+						List<ControlDependenceTreeNode> treeChain = new ArrayList<ControlDependenceTreeNode>();
+						treeChain.addAll(ifParents);
+						treeChain.addAll(elseIfChildren);
+						if(!subTreeCDTNodes2Copy.containsAll(treeChain)) {
+							subTreeCDTNodes2.remove(subTreeCDTNode2);
+							subTreeCDTNodes2.removeAll(subTreeCDTNode2.getDescendants());
+						}
+					}
+				}
 
+				if(subTreeCDTNodes1.size() > 0 && subTreeCDTNodes2.size() > 0) {
+					// Create CDT subtree with containing only the filtered CDTNodes
+					ControlDependenceTreeNode controlDependenceSubTreePDG1X = generateControlDependenceSubTree(controlDependenceTreePDG1, subTreeCDTNodes1);
+					ControlDependenceTreeNode controlDependenceSubTreePDG2X = generateControlDependenceSubTree(controlDependenceTreePDG2, subTreeCDTNodes2);
+
+					// Nodes of original CDTs in Breadth First order
+					List<ControlDependenceTreeNode> CDTNodesList1 = controlDependenceSubTreePDG1X.getNodesInBreadthFirstOrder();
+					List<ControlDependenceTreeNode> CDTNodesList2 = controlDependenceSubTreePDG2X.getNodesInBreadthFirstOrder();
+
+					// Do the bottom up mapping and get all the pairs of mapped CDT subtrees
+					BottomUpCDTMapper bottomUpCDTMapper = new BottomUpCDTMapper(iCompilationUnit1, iCompilationUnit2, controlDependenceSubTreePDG1X, controlDependenceSubTreePDG2X, false);
+
+					// Get the solutions
+					List<CompleteSubTreeMatch> bottomUpSubTreeMatches = bottomUpCDTMapper.getSolutions();
+
+					long endThreadTime = threadMXBean.getCurrentThreadCpuTime();
+					long endWallNanoTime = System.nanoTime();
+
+					pairInfo.setSubtreeMatchingTime(endThreadTime - startThreadime);
+					pairInfo.setSubtreeMatchingWallNanoTime(endWallNanoTime - startWallNanoTime);
+
+					if (bottomUpSubTreeMatches.size() == 0) {
+
+						pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
+
+					} else {
+
+						// For each solution in the bottom-up matching, do the PDG mapping 
+						for(CompleteSubTreeMatch subTreeMatch : bottomUpSubTreeMatches) {
+
+							// Time for mapping PDGs in the CDT nodes starts here
+							startThreadime = threadMXBean.getCurrentThreadCpuTime();
+							startWallNanoTime = System.nanoTime();
+
+							TreeSet<ControlDependenceTreeNodeMatchPair> matchPairs = new TreeSet<ControlDependenceTreeNodeMatchPair>(); 
+							List<ControlDependenceTreeNode>subTreeMatchNodes1 = new ArrayList<ControlDependenceTreeNode>();
+							List<ControlDependenceTreeNode>subTreeMatchNodes2 = new ArrayList<ControlDependenceTreeNode>();
+
+							/*
+							 * Filtering the nodes inside subTreeCDTNodes1 and subTreeCDTNodes2, keep only
+							 * the nodes in the clone fragments
+							 */
+							for (ControlDependenceTreeNodeMatchPair matchPair : subTreeMatch.getMatchPairs()) {
+								if(subTreeCDTNodes1.contains(matchPair.getNode1()) && subTreeCDTNodes2.contains(matchPair.getNode2())) {
+									subTreeMatchNodes1.add(matchPair.getNode1());
+									subTreeMatchNodes2.add(matchPair.getNode2());
+									matchPairs.add(matchPair);
+								}
+							}
+
+							// If all the matched pairs are completely inside one of the code fragments 
+							//if(matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())) {
+							boolean fullTreeMatch = (matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size()));
+							// Get the nodes of the matched pairs in breadth first order
+							List<ControlDependenceTreeNode> orderedSubtreeMatchNodes1 = getCDTNodesInBreadthFirstOrder(CDTNodesList1,subTreeMatchNodes1);
+							List<ControlDependenceTreeNode> orderedSubtreeMatchNodes2 = getCDTNodesInBreadthFirstOrder(CDTNodesList2,subTreeMatchNodes2);
+
+							// Generate CDTs from the matched nodes
+							ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTree(controlDependenceTreePDG1, orderedSubtreeMatchNodes1);
+							// insert unmatched CDT nodes under matched ones
+							for(ControlDependenceTreeNode node : controlDependenceTreePDG1.getNodesInBreadthFirstOrder()) {
+								if(!orderedSubtreeMatchNodes1.contains(node) && orderedSubtreeMatchNodes1.contains(node.getParent())) {
+									insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
+									orderedSubtreeMatchNodes1.add(node);
+								}
+							}
+							ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTree(controlDependenceTreePDG2, orderedSubtreeMatchNodes2);
+							// insert unmatched CDT nodes under matched ones
+							for(ControlDependenceTreeNode node : controlDependenceTreePDG2.getNodesInBreadthFirstOrder()) {
+								if(!orderedSubtreeMatchNodes2.contains(node) && orderedSubtreeMatchNodes2.contains(node.getParent())) {
+									insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
+									orderedSubtreeMatchNodes2.add(node);
+								}
+							}
+							LOGGER.info("Start mapping");
+							PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, 
+									controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, fullTreeMatch, null);
+							LOGGER.info("End mapping");
+							endThreadTime = threadMXBean.getCurrentThreadCpuTime();
+							endWallNanoTime = System.nanoTime();
+
+							PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
+							mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
+							mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
+
+							pairInfo.addMapperInfo(mapperInfo);
+							pairInfo.setStatus(AnalysisStatus.NORMAL);
+
+							//						} else { // not matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())
+							//							pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
+							//						}
+						}
+
+					}
+				}
+				else {
+					pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
 				}
 			}  
 			pairInfo.setNumberOfNodeComparisons(NodePairComparisonCache.getInstance().getMapSize());
