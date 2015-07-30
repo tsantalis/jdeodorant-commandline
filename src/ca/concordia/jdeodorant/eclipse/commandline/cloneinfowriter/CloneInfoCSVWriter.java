@@ -53,7 +53,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
 		testReportDifferencesLines.add("GroupID|PairID|TreeID|TestDifference");
 		expressionGapsInfoLines.add("GroupID|PairID|TreeID|#Params|ReturnType|#ThrownExceptions|#NonEffectiveFinalVars");
-		blockGapsInfoLines.add("GroupID|PairID|TreeID|#Params|ReturnType|#ThrownExceptions|#Statements1|#Statements2");
+		blockGapsInfoLines.add("GroupID|PairID|TreeID|#Params|ReturnType|#ThrownExceptions|#NonEffectiveFinalVars|#Statements1|#Statements2");
 	}
 
 	@Override
@@ -141,6 +141,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 					ITypeBinding returnType = pdgNodeBlockGap.getReturnType();
 					gapInfoLine.append(returnType != null ? returnType.getQualifiedName() : "void").append(SEPARATOR);
 					gapInfoLine.append(pdgNodeBlockGap.getThrownExceptions().size()).append(SEPARATOR);
+					gapInfoLine.append(pdgNodeBlockGap.getNonEffectivelyFinalLocalVariableBindings().size()).append(SEPARATOR);
 					gapInfoLine.append(pdgNodeBlockGap.getNodesG1().size()).append(SEPARATOR);
 					gapInfoLine.append(pdgNodeBlockGap.getNodesG2().size());
 					blockGapsInfoLines.add(gapInfoLine.toString());
