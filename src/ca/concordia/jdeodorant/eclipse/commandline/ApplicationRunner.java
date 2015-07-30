@@ -14,11 +14,12 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.DebugPlugin;import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
+import org.eclipse.debug.core.ILaunchesListener;
 import org.eclipse.debug.core.Launch;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -125,7 +126,7 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		launchConfigurationForCoverage = getLaunchConfiguration(launchManager, getRunConfigurationNameForCoverage());
 		Launch launchInstance = new Launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, null);
 		launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, launchInstance, new NullProgressMonitor());
-
+		
 		while (!launchInstance.isTerminated()) {
 			try {
 				Thread.sleep(100);
@@ -133,6 +134,8 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 				e.printStackTrace();
 			}
 		}
+		launchConfigurationForCoverage=null;
+		launchManager.removeLaunch(launchInstance);
 	}
 
 	public void launchTest() throws CoreException {
@@ -147,6 +150,8 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 				e.printStackTrace();
 			}
 		}
+		launchConfigurationForTest=null;
+		launchManager.removeLaunch(launchInstance);
 	}
 
 	private void createBuildPath() throws JavaModelException, IOException {
