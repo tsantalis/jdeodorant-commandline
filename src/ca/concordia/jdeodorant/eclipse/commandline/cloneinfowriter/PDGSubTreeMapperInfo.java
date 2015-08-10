@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Set;
 
 import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
+import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
 
 public class PDGSubTreeMapperInfo {
-	private final PDGRegionSubTreeMapper mapper;
+	private final DivideAndConquerMatcher mapper;
 	private long timeElapsedToCalculate;
 	
 	private long wallNanoTimeElapsedForMapping;
@@ -25,11 +25,11 @@ public class PDGSubTreeMapperInfo {
 		this.wallNanoTimeElapsedForMapping = wallNanoTime;
 	}
 
-	public PDGSubTreeMapperInfo(PDGRegionSubTreeMapper mapper) {
+	public PDGSubTreeMapperInfo(DivideAndConquerMatcher mapper) {
 		this.mapper = mapper;
 	}
 	
-	public PDGRegionSubTreeMapper getMapper() {
+	public DivideAndConquerMatcher getMapper() {
 		return this.mapper;
 	}
 

@@ -100,6 +100,7 @@ import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNodeMatchP
 import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGMapper;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGSubTreeMapper;
 import gr.uom.java.ast.decomposition.matching.NodePairComparisonCache;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractCloneRefactoring;
 import jxl.Sheet;
@@ -1155,6 +1156,22 @@ public class Application implements IApplication {
 					if (bottomUpSubTreeMatches.size() == 0) {
 
 						pairInfo.setStatus(AnalysisStatus.NO_COMMON_SUBTREE_FOUND);
+						if(ASTNodes1.size() == inputMethodsInfo.getFirstPDG().getTotalNumberOfStatements() && ASTNodes2.size() == inputMethodsInfo.getSecondPDG().getTotalNumberOfStatements()) {
+							//the entire method is cloned
+							startThreadime = threadMXBean.getCurrentThreadCpuTime();
+							startWallNanoTime = System.nanoTime();
+							LOGGER.info("Start mapping");
+							PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, 
+									controlDependenceTreePDG1, controlDependenceTreePDG2, ASTNodes1, ASTNodes2, true, null);
+							LOGGER.info("End mapping");
+							endThreadTime = threadMXBean.getCurrentThreadCpuTime();
+							endWallNanoTime = System.nanoTime();
+							PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
+							mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
+							mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
+							pairInfo.addMapperInfo(mapperInfo);
+							pairInfo.setStatus(AnalysisStatus.NORMAL);
+						}
 
 					} else {
 
@@ -1494,7 +1511,9 @@ public class Application implements IApplication {
 		ControlDependenceTreeNode newNode = new ControlDependenceTreeNode(parent, cdtNode.getNode());
 		if(cdtNode.isElseNode()) {
 			newNode.setElseNode(true);
-			newNode.setIfParent(root.getNode(cdtNode.getIfParent().getNode()));
+			ControlDependenceTreeNode newIfParent = root.getNode(cdtNode.getIfParent().getNode());
+			newIfParent.setElseIfChild(newNode);
+			newNode.setIfParent(newIfParent);
 		}
 		else if(cdtNode.getIfParent() != null) {
 			ControlDependenceTreeNode newIfParent = root.getNode(cdtNode.getIfParent().getNode());

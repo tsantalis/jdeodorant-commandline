@@ -1,23 +1,5 @@
 package ca.concordia.jdeodorant.eclipse.commandline.cloneinfowriter;
 
-import gr.uom.java.ast.decomposition.cfg.mapping.CloneStructureNode;
-import gr.uom.java.ast.decomposition.cfg.mapping.IdBasedGap;
-import gr.uom.java.ast.decomposition.cfg.mapping.MappingState;
-import gr.uom.java.ast.decomposition.cfg.mapping.NodeMapping;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGElseGap;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGElseMapping;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGNodeGap;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGNodeMapping;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
-import gr.uom.java.ast.decomposition.cfg.mapping.precondition.NormalStyler;
-import gr.uom.java.ast.decomposition.cfg.mapping.precondition.PreconditionViolation;
-import gr.uom.java.ast.decomposition.cfg.mapping.precondition.Suggestion;
-import gr.uom.java.ast.decomposition.matching.ASTNodeDifference;
-import gr.uom.java.ast.decomposition.matching.Difference;
-import gr.uom.java.jdeodorant.refactoring.views.CloneDiffSide;
-import gr.uom.java.jdeodorant.refactoring.views.StyledStringStyler;
-import gr.uom.java.jdeodorant.refactoring.views.StyledStringVisitor;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -41,6 +23,23 @@ import ca.concordia.jdeodorant.eclipse.commandline.diff.TextDiff;
 import ca.concordia.jdeodorant.eclipse.commandline.diff.TextDiff.Diff;
 import ca.concordia.jdeodorant.eclipse.commandline.diff.TextDiff.Operation;
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParser;
+import gr.uom.java.ast.decomposition.cfg.mapping.CloneStructureNode;
+import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
+import gr.uom.java.ast.decomposition.cfg.mapping.IdBasedGap;
+import gr.uom.java.ast.decomposition.cfg.mapping.MappingState;
+import gr.uom.java.ast.decomposition.cfg.mapping.NodeMapping;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGElseGap;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGElseMapping;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGNodeGap;
+import gr.uom.java.ast.decomposition.cfg.mapping.PDGNodeMapping;
+import gr.uom.java.ast.decomposition.cfg.mapping.precondition.NormalStyler;
+import gr.uom.java.ast.decomposition.cfg.mapping.precondition.PreconditionViolation;
+import gr.uom.java.ast.decomposition.cfg.mapping.precondition.Suggestion;
+import gr.uom.java.ast.decomposition.matching.ASTNodeDifference;
+import gr.uom.java.ast.decomposition.matching.Difference;
+import gr.uom.java.jdeodorant.refactoring.views.CloneDiffSide;
+import gr.uom.java.jdeodorant.refactoring.views.StyledStringStyler;
+import gr.uom.java.jdeodorant.refactoring.views.StyledStringVisitor;
 
 public class CloneInfoHTMLWriter extends CloneInfoWriter {
 	
@@ -106,7 +105,7 @@ public class CloneInfoHTMLWriter extends CloneInfoWriter {
 		StringBuilder refactorableHTML = new StringBuilder(), notrefactorableHTML = new StringBuilder();
 		for (PDGSubTreeMapperInfo mapperInfo : pairInfo.getPDFSubTreeMappersInfoList()) {
 			
-			PDGRegionSubTreeMapper mapper = mapperInfo.getMapper();
+			DivideAndConquerMatcher mapper = mapperInfo.getMapper();
 			MappingState maximumStateWithMinimumDifferences = mapper.getMaximumStateWithMinimumDifferences();
 			
 			List<CloneStructureNode> cloneMappingNodes = new ArrayList<>();
