@@ -112,31 +112,33 @@ public abstract class CloneToolParser {
 	}
 	
 	protected void writeCoverageInfo(String packageName, String className,   int cloneRow, int startLine, int endLine) {
-		String packageNameDotsReplaced = packageName.replace(".", "/");
-		List<LineCoverage> filteredLines = lineCoverageInfo
-				.stream()
-				.filter(row -> row.getPackageName().equals(packageNameDotsReplaced)
-						&& row.getClassName().equals(className)
-						&& row.getLine() >= startLine
-						&& row.getLine() <= endLine)
-						.collect(Collectors.toList());
-		int allLinesCount = filteredLines.size();
-		long coveredLinesCount = filteredLines.stream().filter(row->row.getStatus() != CoverageStatus.NOT_COVERED).count();
-		float lineCoverage = 0;
-		if (allLinesCount != 0)
-			lineCoverage = (float)coveredLinesCount / allLinesCount;
-		Number number = new Number(
-				ExcelFileColumns.LINE_COVERAGE_PERCENTAGE
-				.getColumnNumber(),
-				cloneRow, lineCoverage);
-		try {
-			sheet.addCell(number);
-		} catch (WriteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		if (!filteredLines.isEmpty()) {
+		if (lineCoverageInfo != null) {
+			String packageNameDotsReplaced = packageName.replace(".", "/");
+			List<LineCoverage> filteredLines = lineCoverageInfo
+					.stream()
+					.filter(row -> row.getPackageName().equals(packageNameDotsReplaced)
+							&& row.getClassName().equals(className)
+							&& row.getLine() >= startLine
+							&& row.getLine() <= endLine)
+					.collect(Collectors.toList());
+			int allLinesCount = filteredLines.size();
+			long coveredLinesCount = filteredLines.stream().filter(row->row.getStatus() != CoverageStatus.NOT_COVERED).count();
+			float lineCoverage = 0;
+			if (allLinesCount != 0)
+				lineCoverage = (float)coveredLinesCount / allLinesCount;
+			Number number = new Number(
+					ExcelFileColumns.LINE_COVERAGE_PERCENTAGE
+					.getColumnNumber(),
+					cloneRow, lineCoverage);
+			try {
+				sheet.addCell(number);
+			} catch (WriteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (!filteredLines.isEmpty()) {
 
+			}
 		}
 	}
 

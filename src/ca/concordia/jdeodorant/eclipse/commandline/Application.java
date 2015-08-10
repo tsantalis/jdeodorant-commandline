@@ -475,7 +475,11 @@ public class Application implements IApplication {
 					int firstStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), firstCloneRow).getContents());
 					int firstEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), firstCloneRow).getContents());
 					String firstSrcFolder = originalSheet.getCell(ExcelFileColumns.SOURCE_FOLDER.getColumnNumber(), firstCloneRow).getContents();
-					float firstCloneCoverage = Float.parseFloat(originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), firstCloneRow).getContents());
+					String firstCloneCoverageText = originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), firstCloneRow).getContents();
+					float firstCloneCoverage = 0;
+					if (!"".equals(firstCloneCoverageText)) {
+						firstCloneCoverage = Float.parseFloat(firstCloneCoverageText);
+					}
 
 					if ("".equals(firstMethodSignature)) {
 						LOGGER.warn(String.format("No method could be found in file '%s' inside offsets %s to %s; " +
@@ -517,7 +521,12 @@ public class Application implements IApplication {
 						int secondStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), secondCloneRow).getContents());
 						int secondEndOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.END_OFFSET.getColumnNumber(), secondCloneRow).getContents());
 						String secondSrcFolder = originalSheet.getCell(ExcelFileColumns.SOURCE_FOLDER.getColumnNumber(), secondCloneRow).getContents();
-						float secondCloneCoverage = Float.parseFloat(originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), secondCloneRow).getContents());
+						float secondCloneCoverage = 0;
+						String secondCloneCoverageText = originalSheet.getCell(ExcelFileColumns.LINE_COVERAGE_PERCENTAGE.getColumnNumber(), secondCloneRow).getContents();
+						if (!"".equals(secondCloneCoverageText)) {
+							secondCloneCoverage = Float.parseFloat(secondCloneCoverageText);
+						}
+						
 						
 						// Check if two clones overlap, we will skip such a case
 						if (firstFullName.equals(secondFullName) &&

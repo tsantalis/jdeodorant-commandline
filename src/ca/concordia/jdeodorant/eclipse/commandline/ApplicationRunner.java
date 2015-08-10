@@ -14,7 +14,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
@@ -76,7 +75,7 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 	private ILaunchManager launchManager;
 
 	public ApplicationRunner(IJavaProject jProject, String classFolder, String reportFolder) throws IOException {
-		launchManager = DebugPlugin.getDefault().getLaunchManager();
+		launchManager = getLaunchManager();
 		this.jProject = jProject;
 		this.classFolder = classFolder;
 		this.reportFolder = reportFolder;
@@ -97,8 +96,13 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		jProject.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 		jProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
 
-		launchTest();
-		launchCoverage();
+		try {
+			launchCoverage();
+			launchTest();
+		} catch (NoSuchMethodException | SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void deleteLaunchConfiguration(ILaunchManager launchManager) throws CoreException {
@@ -121,11 +125,11 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		return null;
 	}
 
-	public void launchCoverage() throws CoreException {
+	public void launchCoverage() throws CoreException, NoSuchMethodException, SecurityException {
 		launchConfigurationForCoverage = getLaunchConfiguration(launchManager, getRunConfigurationNameForCoverage());
 		Launch launchInstance = new Launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, null);
 		launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, launchInstance, new NullProgressMonitor());
-
+		
 		while (!launchInstance.isTerminated()) {
 			try {
 				Thread.sleep(100);
@@ -133,9 +137,12 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 				e.printStackTrace();
 			}
 		}
+		launchConfigurationForCoverage=null;
+		launchManager.removeLaunch(launchInstance);
+		launchManager.getClass().getMethod("shutdown");
 	}
 
-	public void launchTest() throws CoreException {
+	public void launchTest() throws CoreException, NoSuchMethodException, SecurityException {
 		launchConfigurationForTest = getLaunchConfiguration(launchManager, getRunConfigurationNameForTest());
 		Launch launchInstance = new Launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, null);
 		launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, launchInstance, new NullProgressMonitor());
@@ -147,6 +154,9 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 				e.printStackTrace();
 			}
 		}
+		launchConfigurationForTest=null;
+		launchManager.removeLaunch(launchInstance);
+		launchManager.getClass().getMethod("shutdown");
 	}
 
 	private void createBuildPath() throws JavaModelException, IOException {
