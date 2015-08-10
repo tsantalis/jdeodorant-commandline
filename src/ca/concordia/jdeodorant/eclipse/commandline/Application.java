@@ -100,7 +100,6 @@ import gr.uom.java.ast.decomposition.cfg.mapping.ControlDependenceTreeNodeMatchP
 import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGMapper;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
-import gr.uom.java.ast.decomposition.cfg.mapping.PDGSubTreeMapper;
 import gr.uom.java.ast.decomposition.matching.NodePairComparisonCache;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractCloneRefactoring;
 import jxl.Sheet;
