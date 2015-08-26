@@ -2,6 +2,8 @@ package ca.concordia.jdeodorant.eclipse.commandline;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +16,8 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.debug.core.DebugPlugin;
+import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
@@ -73,6 +77,8 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 	private ILaunchConfiguration launchConfigurationForTest;
 	private ILaunchConfiguration launchConfigurationForCoverage;
 	private ILaunchManager launchManager;
+	private Launch launchInstanceForTest;
+	private Launch launchInstanceForCoverage;
 
 	public ApplicationRunner(IJavaProject jProject, String classFolder, String reportFolder) throws IOException {
 		launchManager = getLaunchManager();
@@ -96,11 +102,51 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		jProject.getProject().refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 		jProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
 
+		launchTest();
+		launchCoverage();
+	}
+
+	private void cleanupLaunchManager(ILaunch launch){
 		try {
-			launchCoverage();
-			launchTest();
-		} catch (NoSuchMethodException | SecurityException e) {
-			// TODO Auto-generated catch block
+			clearFieldByInvokingClear(launchManager.getClass().
+			        getDeclaredField("fListeners"),launchManager);
+			clearFieldByInvokingClear( DebugPlugin.getDefault().getClass().
+			        getDeclaredField("fEventQueue"), DebugPlugin.getDefault());
+			clearFieldByInvokingClear(launch.getClass().
+			        getDeclaredField("fProcesses"),launch);
+		} catch (NoSuchFieldException | SecurityException e) {
+			e.printStackTrace();
+		}
+		
+//		Field fListener =launchManager.getClass().
+//		        getDeclaredField("fListeners");
+//		fListener.setAccessible(true);
+//		Object fListenerValue=fListener.get(launchManager);
+//		Method clearListener=fListenerValue.getClass().getMethod("clear",new Class[]{});
+//		clearListener.invoke(fListenerValue);
+//		
+//		Field fEventQueue = DebugPlugin.getDefault().getClass().
+//		        getDeclaredField("fEventQueue");
+//		fEventQueue.setAccessible(true);
+//		Object fEventQueueValue=fEventQueue.get(DebugPlugin.getDefault());
+//		Method clearEventQueue=fEventQueueValue.getClass().getMethod("clear",new Class[]{});
+//		clearEventQueue.invoke(fEventQueueValue);
+//		
+//		Field fProcesses = launch.getClass().
+//		        getDeclaredField("fProcesses");
+//		fProcesses.setAccessible(true);
+//		Object fProcessesValue=fProcesses.get(launch);
+//		Method clearProcesses=fProcessesValue.getClass().getMethod("clear",new Class[]{});
+//		clearProcesses.invoke(fProcessesValue);
+	}
+
+	private void clearFieldByInvokingClear(Field field, Object receiver) {
+		try {
+			field.setAccessible(true);
+			Object fieldObject=field.get(receiver);
+			Method method=fieldObject.getClass().getMethod("clear",new Class[]{});
+			method.invoke(fieldObject);
+		} catch (Exception e){
 			e.printStackTrace();
 		}
 	}
@@ -125,29 +171,34 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 		return null;
 	}
 
-	public void launchCoverage() throws CoreException, NoSuchMethodException, SecurityException {
-		launchConfigurationForCoverage = getLaunchConfiguration(launchManager, getRunConfigurationNameForCoverage());
-		Launch launchInstance = new Launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, null);
-		launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, launchInstance, new NullProgressMonitor());
+	public void launchCoverage() throws CoreException {
+		if (launchConfigurationForCoverage==null)
+			launchConfigurationForCoverage = getLaunchConfiguration(launchManager, getRunConfigurationNameForCoverage());
+		if (launchInstanceForCoverage==null)
+			launchInstanceForCoverage = new Launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, null);
+		launch(launchConfigurationForCoverage, ILaunchManager.RUN_MODE, launchInstanceForCoverage, new NullProgressMonitor());
 		
-		while (!launchInstance.isTerminated()) {
+		while (!launchInstanceForCoverage.isTerminated()) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+		//launchInstanceForCoverage.terminate();
 		launchConfigurationForCoverage=null;
-		launchManager.removeLaunch(launchInstance);
-		launchManager.getClass().getMethod("shutdown");
+		launchManager.removeLaunch(launchInstanceForCoverage);
+		cleanupLaunchManager(launchInstanceForCoverage);
 	}
 
-	public void launchTest() throws CoreException, NoSuchMethodException, SecurityException {
-		launchConfigurationForTest = getLaunchConfiguration(launchManager, getRunConfigurationNameForTest());
-		Launch launchInstance = new Launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, null);
-		launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, launchInstance, new NullProgressMonitor());
+	public void launchTest() throws CoreException {
+		if (launchConfigurationForTest==null)
+			launchConfigurationForTest = getLaunchConfiguration(launchManager, getRunConfigurationNameForTest());
+		if (launchInstanceForTest==null)
+			launchInstanceForTest = new Launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, null);
+		launch(launchConfigurationForTest, ILaunchManager.RUN_MODE, launchInstanceForTest, new NullProgressMonitor());
 
-		while (!launchInstance.isTerminated()) {
+		while (!launchInstanceForTest.isTerminated()) {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
@@ -155,8 +206,8 @@ public class ApplicationRunner extends JavaLaunchDelegate {
 			}
 		}
 		launchConfigurationForTest=null;
-		launchManager.removeLaunch(launchInstance);
-		launchManager.getClass().getMethod("shutdown");
+		launchManager.removeLaunch(launchInstanceForTest);
+		cleanupLaunchManager(launchInstanceForTest);
 	}
 
 	private void createBuildPath() throws JavaModelException, IOException {
