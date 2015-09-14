@@ -50,11 +50,13 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ASTMatcher;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.IfStatement;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NodeFinder;
+import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.internal.core.SourceMethod;
 import org.eclipse.jdt.internal.core.SourceType;
 import org.eclipse.jface.text.BadLocationException;
@@ -1040,6 +1042,15 @@ public class Application implements IApplication {
 				ASTNode parent1 = getControlParent(ASTNodes1);
 				ASTNode parent2 = getControlParent(ASTNodes2);
 
+				if (allStatementsAreInAnonymousClassDeclarationOrCatchClauseOrFinallyBlock(ASTNodes1) || 
+						allStatementsAreInAnonymousClassDeclarationOrCatchClauseOrFinallyBlock(ASTNodes2)) {
+					NodePairComparisonCache.getInstance().clearCache();
+					CompilationUnitCache.getInstance().releaseLock();
+					pairInfo.setStatus(AnalysisStatus.NOT_ANALYZED);
+					LOGGER.info("All statements in at least one of the code fragments are inside anonymous class declaration, or catch clause, or finally block, skipping this clone pair");
+					return;
+				}
+				
 				// Get the ControlDependenceTreeNode corresponding to the parent nodes.
 				// If all the ASTNodes are nested under an "else", it returns the "else" ControlDependenceTreeNode instead of the "if"
 				ControlDependenceTreeNode controlDependenceSubTreePDG1X = getSubTreeCDTNode(CDTNodes1, parent1, allNodesNestedUnderElse(ASTNodes1));
@@ -1261,6 +1272,38 @@ public class Application implements IApplication {
 		} else { // not methodObject1 != null && methodObject2 != null && methodObject1.getMethodBody() != null && methodObject2.getMethodBody() != null
 			pairInfo.setStatus(AnalysisStatus.NOT_ANALYZED);
 		}
+	}
+
+	private boolean allStatementsAreInAnonymousClassDeclarationOrCatchClauseOrFinallyBlock(List<ASTNode> ASTNodes) { 
+		for (ASTNode astNode : ASTNodes) {
+			if (!isNestedUnderAnonymousClassDeclarationOrCatchClauseOrFinallyBlock(astNode))
+				return false;
+		}
+		return true;
+	}
+	
+	private boolean isNestedUnderAnonymousClassDeclarationOrCatchClauseOrFinallyBlock(ASTNode node) {
+		ASTNode parent = node.getParent();
+		while(parent != null) {
+			if(parent instanceof AnonymousClassDeclaration || parent instanceof CatchClause ||
+					isFinallyBlockOfTryStatement(parent)) {
+				return true;
+			}
+			parent = parent.getParent();
+		}
+		return false;
+	}
+	
+	private boolean isFinallyBlockOfTryStatement(ASTNode node) {
+		ASTNode parent = node.getParent();
+		if(parent != null && parent instanceof TryStatement) {
+			TryStatement tryStatement = (TryStatement)parent;
+			Block finallyBlock = tryStatement.getFinally();
+			if(node instanceof Block && finallyBlock != null) {
+				return finallyBlock.equals((Block)node);
+			}
+		}
+		return false;
 	}
 
 	private boolean isInside(ASTNode astNode, int startOffset, int endOffset, ICompilationUnit iCompilationUnit) {
