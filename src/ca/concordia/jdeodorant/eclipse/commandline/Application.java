@@ -88,6 +88,7 @@ import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
 import gr.uom.java.ast.ASTReader;
 import gr.uom.java.ast.AbstractMethodDeclaration;
 import gr.uom.java.ast.ClassDeclarationObject;
+import gr.uom.java.ast.CompilationErrorDetectedException;
 import gr.uom.java.ast.CompilationUnitCache;
 import gr.uom.java.ast.SystemObject;
 import gr.uom.java.ast.decomposition.cfg.CFG;
@@ -845,11 +846,15 @@ public class Application implements IApplication {
 
 				if (makeASTNodes) {
 					LOGGER.info("Now parsing the project");
-					if(ASTReader.getSystemObject() != null && jProject.equals(ASTReader.getExaminedProject())) {
-						new ASTReader(jProject, ASTReader.getSystemObject(), null);
-					}
-					else {
-						new ASTReader(jProject, null);
+					try {
+						if(ASTReader.getSystemObject() != null && jProject.equals(ASTReader.getExaminedProject())) {
+							new ASTReader(jProject, ASTReader.getSystemObject(), null);
+						}
+						else {
+							new ASTReader(jProject, null);
+						}
+					} catch(CompilationErrorDetectedException e) {
+						LOGGER.info("Project contains compilation errors");
 					}
 					LOGGER.info("Finished parsing");
 				}
