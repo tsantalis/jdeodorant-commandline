@@ -17,6 +17,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.ITextFileBuffer;
+import org.eclipse.core.filebuffers.ITextFileBufferManager;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
@@ -66,6 +70,7 @@ import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.slf4j.Logger;
 
+import ca.concordia.jdeodorant.clone.parsers.InvalidInputFileException;
 import ca.concordia.jdeodorant.eclipse.commandline.ApplicationRunner.TestReportFileType;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser.ApplicationMode;
@@ -80,8 +85,7 @@ import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.Te
 import ca.concordia.jdeodorant.eclipse.commandline.diff.TextDiff;
 import ca.concordia.jdeodorant.eclipse.commandline.diff.TextDiff.Diff;
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParser;
-import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserFactory;
-import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserFactory.CloneToolParserType;
+import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserType;
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.ExcelFileColumns;
 import ca.concordia.jdeodorant.eclipse.commandline.test.MatchingSubtreesTest;
 import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
@@ -230,11 +234,11 @@ public class Application implements IApplication {
 		});
 	}
 
-	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) {
+	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) throws InvalidInputFileException {
 		String toolOutputMainFile = cliParser.getCloneToolOutputFilePath();
 		CloneToolParserType toolType = CloneToolParserType.valueOf(cliParser.getCloneToolName().toUpperCase());
 		LOGGER.info("Parsing " + toolOutputMainFile);
-		CloneToolParser parser = CloneToolParserFactory.getCloneToolParser(
+		CloneToolParser parser = new CloneToolParser(
 				toolType,
 				jProject, 
 				excelFile, 
@@ -1337,7 +1341,7 @@ public class Application implements IApplication {
 			return true;
 
 		if (astNodeStartPosition >= startOffset && astNodeStartPosition <= endOffset) {
-			IDocument iDocument = CloneToolParser.getIDocument(iCompilationUnit);
+			IDocument iDocument = getIDocument(iCompilationUnit);
 			try {
 				String realSourceCode = iDocument.get(astNodeStartPosition, endOffset - astNodeStartPosition);
 				String astNodeSourceCode = iDocument.get(astNodeStartPosition, astNodeLength);
@@ -1715,27 +1719,25 @@ public class Application implements IApplication {
 		return iMethod;
 	}
 
-	//	private IMethod getIMethodWithSignature(IJavaProject jProject, IType type, String methodName, String methodSignature)
-	//			throws JavaModelException {
-	//
-	//		SystemObject systemObject = ASTReader.getSystemObject();
-	//		IMethod[] methods = type.getMethods();
-	//		IMethod iMethod = null;
-	//		for(IMethod method : methods) {
-	//			if(/*method.getSignature().equals(methodSignature) && */method.getElementName().equals(methodName)) {
-	//				//AbstractMethodDeclaration abstractMethodDeclaration = systemObject.getMethodObject(method);
-	//				//MethodDeclaration methodAST = abstractMethodDeclaration.getMethodDeclaration();
-	//				iMethod = method;
-	//				break;
-	//			}
-	//		}
-	//
-	//		return iMethod;
-	//	}
-
-	//	
-
-
+	public static IDocument getIDocument(IJavaElement iJavaElement) {
+		ITextFileBufferManager bufferManager = FileBuffers.getTextFileBufferManager();
+		IPath path = iJavaElement.getPath();
+		IDocument iDocument = null;
+		try {
+			bufferManager.connect(path, LocationKind.IFILE, null);
+			ITextFileBuffer textFileBuffer = bufferManager.getTextFileBuffer(path, LocationKind.IFILE);
+			iDocument = textFileBuffer.getDocument();
+		} catch (CoreException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				bufferManager.disconnect(path, LocationKind.IFILE, null);
+			} catch (CoreException e) {
+				e.printStackTrace();
+			}
+		}
+		return iDocument;
+	}
 
 	@Override
 	public void stop() {
