@@ -1253,17 +1253,29 @@ public class Application implements IApplication {
 							ControlDependenceTreeNode controlDependenceSubTreePDG1 = generateControlDependenceSubTree(controlDependenceTreePDG1, orderedSubtreeMatchNodes1);
 							// insert unmatched CDT nodes under matched ones
 							for(ControlDependenceTreeNode node : controlDependenceTreePDG1.getNodesInBreadthFirstOrder()) {
-								if(!orderedSubtreeMatchNodes1.contains(node) && orderedSubtreeMatchNodes1.contains(node.getParent())) {
-									insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
-									orderedSubtreeMatchNodes1.add(node);
+								if(!orderedSubtreeMatchNodes1.contains(node)) {
+									if(orderedSubtreeMatchNodes1.contains(node.getParent())) {
+										insertCDTNodeInTree(node, controlDependenceSubTreePDG1);
+										orderedSubtreeMatchNodes1.add(node);
+									}
+									else if(orderedSubtreeMatchNodes1.contains(node.getPreviousSibling())) {
+										insertCDTNodeInTreeAfterSibling(node, node.getPreviousSibling(), controlDependenceSubTreePDG1);
+										orderedSubtreeMatchNodes1.add(node);
+									}
 								}
 							}
 							ControlDependenceTreeNode controlDependenceSubTreePDG2 = generateControlDependenceSubTree(controlDependenceTreePDG2, orderedSubtreeMatchNodes2);
 							// insert unmatched CDT nodes under matched ones
 							for(ControlDependenceTreeNode node : controlDependenceTreePDG2.getNodesInBreadthFirstOrder()) {
-								if(!orderedSubtreeMatchNodes2.contains(node) && orderedSubtreeMatchNodes2.contains(node.getParent())) {
-									insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
-									orderedSubtreeMatchNodes2.add(node);
+								if(!orderedSubtreeMatchNodes2.contains(node)) {
+									if(orderedSubtreeMatchNodes2.contains(node.getParent())) {
+										insertCDTNodeInTree(node, controlDependenceSubTreePDG2);
+										orderedSubtreeMatchNodes2.add(node);
+									}
+									else if(orderedSubtreeMatchNodes2.contains(node.getPreviousSibling())) {
+										insertCDTNodeInTreeAfterSibling(node, node.getPreviousSibling(), controlDependenceSubTreePDG2);
+										orderedSubtreeMatchNodes2.add(node);
+									}
 								}
 							}
 							LOGGER.info("Start mapping");
@@ -1599,6 +1611,17 @@ public class Application implements IApplication {
 				newNode.setIfParentAndElseIfChild(newIfParent);
 			}
 		}
+	}
+
+	private void insertCDTNodeInTreeAfterSibling(ControlDependenceTreeNode cdtNode, ControlDependenceTreeNode previousSibling, ControlDependenceTreeNode root) {
+		ControlDependenceTreeNode parent;
+		if(cdtNode.getParent().isElseNode()) {
+			parent = root.getElseNode(cdtNode.getParent().getIfParent().getNode());
+		}
+		else {
+			parent = root.getNode(cdtNode.getParent().getNode());
+		}
+		new ControlDependenceTreeNode(parent, previousSibling, cdtNode.getNode());
 	}
 
 	private IMethod getIMethod(IJavaProject jProject, String typeName, String methodName, String methodSignature, int start, int end)
