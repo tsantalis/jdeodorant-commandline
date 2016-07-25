@@ -1116,12 +1116,14 @@ public class Application implements IApplication {
 				PDGRegionSubTreeMapper mapper = new PDGRegionSubTreeMapper(inputMethodsInfo.getFirstPDG(), inputMethodsInfo.getSecondPDG(), iCompilationUnit1, iCompilationUnit2, controlDependenceSubTreePDG1, controlDependenceSubTreePDG2, ASTNodes1, ASTNodes2, true, null);
 				long endTime = threadMXBean.getCurrentThreadCpuTime();
 
-				// Create a new mapper information object (contains the real mapper + the time elapsed for mapping)
-				PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);
-				mapperInfo.setTimeElapsedForMapping(endTime - startTime);
+				if (mapper.hasMappedNodes()) {
+					// Create a new mapper information object (contains the real mapper + the time elapsed for mapping)
+					PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);
+					mapperInfo.setTimeElapsedForMapping(endTime - startTime);
 
-				// Add this (and the only) mapper informations (PDGMapper + time) to the pair information object
-				pairInfo.addMapperInfo(mapperInfo);	
+					// Add this (and the only) mapper informations (PDGMapper + time) to the pair information object
+					pairInfo.addMapperInfo(mapperInfo);
+				}
 				pairInfo.setStatus(AnalysisStatus.NORMAL);
 
 			} else { // If we have a control structure
@@ -1210,10 +1212,12 @@ public class Application implements IApplication {
 							LOGGER.info("End mapping");
 							endThreadTime = threadMXBean.getCurrentThreadCpuTime();
 							endWallNanoTime = System.nanoTime();
-							PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
-							mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
-							mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
-							pairInfo.addMapperInfo(mapperInfo);
+							if (mapper.hasMappedNodes()) {
+								PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
+								mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
+								mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
+								pairInfo.addMapperInfo(mapperInfo);
+							}
 							pairInfo.setStatus(AnalysisStatus.NORMAL);
 						}
 
@@ -1284,12 +1288,13 @@ public class Application implements IApplication {
 							LOGGER.info("End mapping");
 							endThreadTime = threadMXBean.getCurrentThreadCpuTime();
 							endWallNanoTime = System.nanoTime();
+							if (mapper.hasMappedNodes()) {
+								PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
+								mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
+								mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
 
-							PDGSubTreeMapperInfo mapperInfo = new PDGSubTreeMapperInfo(mapper);			
-							mapperInfo.setTimeElapsedForMapping(endThreadTime - startThreadime);
-							mapperInfo.setWallNanoTimeElapsedForMapping(endWallNanoTime - startWallNanoTime);
-
-							pairInfo.addMapperInfo(mapperInfo);
+								pairInfo.addMapperInfo(mapperInfo);
+							}
 							pairInfo.setStatus(AnalysisStatus.NORMAL);
 
 							//						} else { // not matchPairs.size() == Math.min(subTreeCDTNodes1.size(), subTreeCDTNodes2.size())
