@@ -510,7 +510,10 @@ public class Application implements IApplication {
 
 					String firstClassName = originalSheet.getCell(ExcelFileColumns.CLASS_NAME.getColumnNumber(), firstCloneRow).getContents();
 					String firstPackageName = originalSheet.getCell(ExcelFileColumns.PACKAGE_NAME.getColumnNumber(), firstCloneRow).getContents();
-					String firstFullName = firstPackageName + "." + firstClassName; 
+					String firstFullName = firstClassName;
+					if (!firstPackageName.trim().equals("")) {
+						firstFullName = firstPackageName + "." + firstClassName;
+					}
 					String firstMethodName = originalSheet.getCell(ExcelFileColumns.METHOD_NAME.getColumnNumber(), firstCloneRow).getContents(); 
 					String firstMethodSignature = originalSheet.getCell(ExcelFileColumns.METHOD_SIGNATURE.getColumnNumber(), firstCloneRow).getContents(); 
 					int firstStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), firstCloneRow).getContents());
@@ -556,7 +559,10 @@ public class Application implements IApplication {
 
 						String secondClassName = originalSheet.getCell(ExcelFileColumns.CLASS_NAME.getColumnNumber(), secondCloneRow).getContents();
 						String secondPackageName = originalSheet.getCell(ExcelFileColumns.PACKAGE_NAME.getColumnNumber(), secondCloneRow).getContents();
-						String secondFullName = secondPackageName + "." + secondClassName; 
+						String secondFullName = secondClassName;
+						if (!secondPackageName.trim().equals("")) {
+							secondFullName = secondPackageName + "." + secondFullName;
+						}
 						String secondMethodName = originalSheet.getCell(ExcelFileColumns.METHOD_NAME.getColumnNumber(), secondCloneRow).getContents();
 						String secondMethodSignature = originalSheet.getCell(ExcelFileColumns.METHOD_SIGNATURE.getColumnNumber(), secondCloneRow).getContents();
 						int secondStartOffset = Integer.parseInt(originalSheet.getCell(ExcelFileColumns.START_OFFSET.getColumnNumber(), secondCloneRow).getContents());
