@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserType;
+import ca.concordia.jdeodorant.eclipse.commandline.utility.Mailer.SecurityType;
 
 
 /**
@@ -63,120 +64,190 @@ public class CLIParser {
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("mode")
-				.withDescription(
-						"Mode of operation, one of: "
-								+ Arrays.toString(ApplicationMode.values()))
-				.hasArg().create("m"));
+				.withDescription("Mode of operation, one of: " + Arrays.toString(ApplicationMode.values()))
+				.hasArg()
+				.create("m"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("project")
-				.withDescription(
-						"Exact name of the project opened in the workspace")
-				.hasArg().create("p"));
+				.withDescription("Exact name of the project opened in the workspace")
+				.hasArg()
+				.create("p"));
 
-		options.addOption(OptionBuilder.withArgName("")
+		options.addOption(OptionBuilder
+				.withArgName("")
 				.withLongOpt("excelfile")
-				.withDescription("Path to the excel file").hasArg().create("x"));
+				.withDescription("Path to the excel file")
+				.hasArg()
+				.create("x"));
 
-		options.addOption(OptionBuilder.withArgName("")
+		options.addOption(OptionBuilder
+				.withArgName("")
 				.withLongOpt("tooloutputfile")
 				.withDescription("Path to the output file of the clone tool")
-				.hasArg().create("i"));
+				.hasArg()
+				.create("i"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("extra-args")
-				.withDescription(
-						"Comma separated list of extra arguments. See documentation for more information.")
-				.hasArgs().withValueSeparator(',').create("xargs"));
+				.withDescription("Comma separated list of extra arguments. "
+						+ "See documentation for more information.")
+				.hasArgs()
+				.withValueSeparator(',')
+				.create("xargs"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("tool")
-				.withDescription(
-						"Name of the tool, one of: "
-								+ Arrays.toString(CloneToolParserType.values()))
-				.hasArg().create("t"));
+				.withDescription("Name of the tool, one of: " + 
+						Arrays.toString(CloneToolParserType.values()))
+				.hasArg()
+				.create("t"));
 
-		options.addOption(OptionBuilder.withArgName("").withLongOpt("help")
-				.withDescription("Display this help").hasArg(false).create("?"));
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("help")
+				.withDescription("Display this help")
+				.hasOptionalArg()
+				.create("?"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("row-start-from")
-				.withDescription(
-						"The row in the excel file from which the analysis should start from"
-								+ " (must be the first row in the clone group)")
-				.hasArg().create("r"));
+				.withDescription("The row in the excel file from which the analysis should start from "
+						+ "(must be the first row in the clone group)")
+				.hasArg()
+				.create("r"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("append-results")
-				.withDescription(
-						"Determine weather the result files (e.g. CSV files "
-								+ "must be appended to the existing files. By default, the existing "
-								+ "files will be overridden.").hasArg(false)
+				.withDescription("Determine weather the result files (e.g. CSV files) "
+						+ "must be appended to the existing files. By default, the existing "
+						+ "files will be overridden.")
+				.hasOptionalArg()
 				.create("a"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("skip-groups")
-				.withDescription(
-						"A comma separated list of clone groups in the excel file to be skipped.")
-				.withValueSeparator(',').hasArgs().create("s"));
+				.withDescription("A comma separated list of clone groups in the excel file to be skipped.")
+				.withValueSeparator(',')
+				.hasArgs()
+				.create("s"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("test-packages")
-				.withDescription(
-						"A comma-separated list of the name of test packages")
-				.withValueSeparator(',').hasArgs().create("testpkgs"));
+				.withDescription("A comma-separated list of the name of test packages")
+				.withValueSeparator(',')
+				.hasArgs()
+				.create("testpkgs"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("test-source-folders")
-				.withDescription(
-						"A comma-separated list of the name of test source folders")
-				.withValueSeparator(',').hasArgs().create("testsrcs"));
+				.withDescription("A comma-separated list of the name of test source folders")
+				.withValueSeparator(',')
+				.hasArgs()
+				.create("testsrcs"));
 
 		options.addOption(OptionBuilder
 				.withLongOpt("coverage-report")
-				.withDescription(
-						"Launch application to generate coverage report")
-				.hasOptionalArg().create("cr"));
+				.withDescription("Launch application to generate coverage report")
+				.hasOptionalArg()
+				.create("cr"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("class-folder")
-				.withDescription(
-						"Name of class folder which .class files are located")
-				.hasArg().create("cf"));
+				.withDescription("Name of class folder which .class files are located")
+				.hasArg()
+				.create("cf"));
 		
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("run-tests")
 				.withDescription("Run tests after applying each refactoring")
-				.hasOptionalArg().create("rt"));
+				.hasOptionalArg()
+				.create("rt"));
 		
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("log-to-file")
 				.withDescription("Create a log file from console output")
-				.hasOptionalArg().create("l"));
+				.hasOptionalArg()
+				.create("l"));
 		
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("group-ids")
-				.withDescription("A comma-separated list of clone group IDs to be analyzed. Other clone groups in the file will be skipped.")
-				.withValueSeparator(',').hasArgs().create("g"));
+				.withDescription("A comma-separated list of clone group IDs to be analyzed. "
+						+ "Other clone groups in the file will be skipped.")
+				.withValueSeparator(',')
+				.hasArgs()
+				.create("g"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("debugging-enabled")
-				.withDescription("Prevent Eclipse command-line tool to cancel jobs queued in Eclipse JobManager such as workbench job and etc.")
-				.hasOptionalArgs().create("de"));
+				.withDescription("Prevent Eclipse command-line tool to cancel jobs"
+						+ "queued in Eclipse JobManager such as workbench job and etc.")
+				.hasOptionalArgs()
+				.create("de"));
 
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-ip")
+				.withDescription("SMTP server IP address")
+				.hasArg()
+				.create("msrvr"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-port")
+				.withDescription("SMTP server port number")
+				.hasArg()
+				.create("mport"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-security-type")
+				.withDescription("Security type for mail server, one of the values: " + Arrays.toString(SecurityType.values()))
+				.hasArg()
+				.create("msectype"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-authenticated")
+				.withDescription("Is SMTP server authenticated")
+				.hasOptionalArg()
+				.create("mauth"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-user-name")
+				.withDescription("SMTP user name")
+				.hasArg()
+				.create("muser"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("mail-server-password")
+				.withDescription("SMTP password")
+				.hasArg()
+				.create("mpass"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("email-addresses")
+				.withDescription("Address to which the analysis notifications should be sent")
+				.withValueSeparator(',')
+				.hasOptionalArgs()
+				.create("em"));
+		
 		// create the Apache Commons CLI parser
 		CommandLineParser parser = new BasicParser();
 		try {
@@ -347,5 +418,46 @@ public class CLIParser {
 	
 	public int[] getCloneGroupIDsToAnalyze() {
 		return getIntArrayFromStringArrayForOption("group-ids");
+	}
+
+	public int getSMTPServerPort() {
+		try {
+			return Integer.parseInt(getValue("mport", "25"));
+		} catch (NumberFormatException nfex) {
+			LOGGER.warn("Invalid port number, 25 is selected by default");
+			return 25;
+		}
+	}
+	
+	public String getSMTPServerAddress() {
+		return getValue("msrvr", "127.0.0.1");
+	}
+
+	public String[] getNotificationEmailAddresses() {
+		String[] optionValues = cmdLine.getOptionValues("em");
+		if (optionValues != null) {
+			return optionValues;
+		}
+		return new String[] {};
+	}
+
+	public boolean isMailServerAuthenticated() {
+		return hasOption("mauth");
+	}
+
+	public String getMailServerUserName() {
+		return getValue("muser", "");
+	}
+
+	public String getMailServerPassword() {
+		return getValue("mpass", "");
+	}
+
+	public SecurityType getMailServerSecurtyType() {
+		try {
+			return SecurityType.valueOf(getValue("msectype", "none").toUpperCase());
+		} catch (IllegalArgumentException ex) {
+			return SecurityType.NONE;
+		}
 	}
 }

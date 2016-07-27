@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -89,6 +91,7 @@ import ca.concordia.jdeodorant.eclipse.commandline.parsers.CloneToolParserType;
 import ca.concordia.jdeodorant.eclipse.commandline.parsers.ExcelFileColumns;
 import ca.concordia.jdeodorant.eclipse.commandline.test.MatchingSubtreesTest;
 import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
+import ca.concordia.jdeodorant.eclipse.commandline.utility.Mailer;
 import gr.uom.java.ast.ASTReader;
 import gr.uom.java.ast.AbstractMethodDeclaration;
 import gr.uom.java.ast.ClassDeclarationObject;
@@ -151,9 +154,9 @@ public class Application implements IApplication {
 				handleScheduledJobsByEclipse();
 			IProject project = jProject.getProject();
 			project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
-			
+
 			File excelFile = new File(cliParser.getExcelFilePath());
-			
+
 			if (cliParser.hasLogToFile()) {
 				FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
 			}
@@ -165,29 +168,61 @@ public class Application implements IApplication {
 			String[] testPackages = cliParser.getTestPackages();
 			String[] testSourceFolders = cliParser.getTestSourceFolders();
 
-			switch (applicationMode) {
-			case PARSE:
-				parseCloneToolOutputFile(cliParser, jProject, excelFile);		
-				break;
-			case PARSE_AND_ANALYZE:
-				parseCloneToolOutputFile(cliParser, jProject, excelFile);
-				// No break, OK?
-			case ANALYZE_EXISTING:
-				if (!excelFile.exists()) {
-					throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
-				}
+			try {
+				switch (applicationMode) {
+				case PARSE:
+					parseCloneToolOutputFile(cliParser, jProject, excelFile);		
+					break;
+				case PARSE_AND_ANALYZE:
+					parseCloneToolOutputFile(cliParser, jProject, excelFile);
+					// No break, OK?
+				case ANALYZE_EXISTING:
+					if (!excelFile.exists()) {
+						throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
+					}
 
-				testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
-				break;
+					testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
+					break;
 
-			default:
-				throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
-			}							
+				default:
+					throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
+				}				
+			} catch (Throwable throwable) {
+				throwable.printStackTrace();
+			}
 		}
-
+		
+		if (cliParser.getNotificationEmailAddresses().length > 0) {
+			Mailer mailer = new Mailer(cliParser.getSMTPServerAddress(),
+					cliParser.getSMTPServerPort(),
+					cliParser.isMailServerAuthenticated(),
+					cliParser.getMailServerSecurtyType(),
+					cliParser.getMailServerUserName(),
+					cliParser.getMailServerPassword());
+			String message = String.format("Finished analysing project %s (%s) in %s",
+					cliParser.getProjectName(),
+					cliParser.getExcelFilePath(),
+					getComputerName());
+			
+			mailer.sendMail("Analysis finished", message, cliParser.getMailServerUserName(), cliParser.getNotificationEmailAddresses());
+		}
+		
 		return IApplication.EXIT_OK;
 	}
 	
+	private String getComputerName() {
+		String hostname = "Unknown";
+		try
+		{
+			InetAddress addr;
+			addr = InetAddress.getLocalHost();
+			hostname = addr.getHostName();
+		} catch (UnknownHostException ex) {
+			LOGGER.warn("Hostname can not be resolved");
+		}
+		return hostname;
+	}
+
 	/**
 	 * This method will cancel following jobs to prevent memory leak by IndexManager and increasing execution performance
 	 * Debug Event Dispatch
