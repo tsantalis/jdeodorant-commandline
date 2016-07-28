@@ -136,39 +136,40 @@ public class Application implements IApplication {
 
 		// Get the commandline parser object
 		cliParser = new CLIParser((String[])arg0.getArguments().get(IApplicationContext.APPLICATION_ARGS));
-
+				
 		if (cliParser.showHelp()) {
 			cliParser.printHelp();
 		}
 		else { 
-
-			ApplicationMode applicationMode = cliParser.getApplicationMode(ApplicationMode.ANALYZE_EXISTING);
-
-			String projectName = cliParser.getProjectName();
-			// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
-			IJavaProject jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
-			if (jProject == null) {
-				throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
-			}
-			if (!cliParser.isDebuggingEnabled())
-				handleScheduledJobsByEclipse();
-			IProject project = jProject.getProject();
-			project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
-
-			File excelFile = new File(cliParser.getExcelFilePath());
-
-			if (cliParser.hasLogToFile()) {
-				FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
-			}
-
-			int startFrom = cliParser.getStartingRow();
-			boolean appendResults = cliParser.getAppendResults();
-			int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
-			int[] cloneGroupIdsToAnalyze = cliParser.getCloneGroupIDsToAnalyze();
-			String[] testPackages = cliParser.getTestPackages();
-			String[] testSourceFolders = cliParser.getTestSourceFolders();
-
+			String status = "";
 			try {
+
+				ApplicationMode applicationMode = cliParser.getApplicationMode(ApplicationMode.ANALYZE_EXISTING);
+
+				String projectName = cliParser.getProjectName();
+				// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
+				IJavaProject jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
+				if (jProject == null) {
+					throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
+				}
+				if (!cliParser.isDebuggingEnabled())
+					handleScheduledJobsByEclipse();
+				IProject project = jProject.getProject();
+				project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
+
+				File excelFile = new File(cliParser.getExcelFilePath());
+
+				if (cliParser.hasLogToFile()) {
+					FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
+				}
+
+				int startFrom = cliParser.getStartingRow();
+				boolean appendResults = cliParser.getAppendResults();
+				int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
+				int[] cloneGroupIdsToAnalyze = cliParser.getCloneGroupIDsToAnalyze();
+				String[] testPackages = cliParser.getTestPackages();
+				String[] testSourceFolders = cliParser.getTestSourceFolders();
+
 				switch (applicationMode) {
 				case PARSE:
 					parseCloneToolOutputFile(cliParser, jProject, excelFile);		
@@ -183,37 +184,38 @@ public class Application implements IApplication {
 
 					testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
 					break;
-
 				default:
 					throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
-				}				
+				}
+				status = "OK";
 			} catch (Throwable throwable) {
 				throwable.printStackTrace();
+				status = "ERROR";
+			}
+
+			if (cliParser.getNotificationEmailAddresses().length > 0) {
+				Mailer mailer = new Mailer(cliParser.getSMTPServerAddress(),
+						cliParser.getSMTPServerPort(),
+						cliParser.isMailServerAuthenticated(),
+						cliParser.getMailServerSecurtyType(),
+						cliParser.getMailServerUserName(),
+						cliParser.getMailServerPassword());
+				String message = String.format("Finished analysing project %s (%s) in %s [%s]",
+						cliParser.getProjectName(),
+						cliParser.getExcelFilePath(),
+						getComputerName(),
+						status);
+				String subject = String.format("Analysis finished [%s]", status);
+				mailer.sendMail(subject, message, cliParser.getMailServerUserName(), cliParser.getNotificationEmailAddresses());
 			}
 		}
-		
-		if (cliParser.getNotificationEmailAddresses().length > 0) {
-			Mailer mailer = new Mailer(cliParser.getSMTPServerAddress(),
-					cliParser.getSMTPServerPort(),
-					cliParser.isMailServerAuthenticated(),
-					cliParser.getMailServerSecurtyType(),
-					cliParser.getMailServerUserName(),
-					cliParser.getMailServerPassword());
-			String message = String.format("Finished analysing project %s (%s) in %s",
-					cliParser.getProjectName(),
-					cliParser.getExcelFilePath(),
-					getComputerName());
-			
-			mailer.sendMail("Analysis finished", message, cliParser.getMailServerUserName(), cliParser.getNotificationEmailAddresses());
-		}
-		
+
 		return IApplication.EXIT_OK;
 	}
 	
 	private String getComputerName() {
 		String hostname = "Unknown";
-		try
-		{
+		try {
 			InetAddress addr;
 			addr = InetAddress.getLocalHost();
 			hostname = addr.getHostName();
