@@ -48,7 +48,8 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				"#StatementsInCloneFragment1|#StatementsInCloneFragment2|#NodeComparisons|#PDGNodesInMethod1|#PDGNodesInMethod2|" +
 				"#RefactorableSubtrees|SubtreeMatchingWallNanoTime|Status");
 		mappersCSVLines.add("GroupID|PairID|TreeID|CloneType|PDGMappingWallNanoTime|#PreconditionViolations|#MappedStatements|" +
-				"#UnMappedStatements1|#UnMappedStatements2|#Differences|RefactoringWasOK|TestsFailedAfterRefactoring|HadCompileErrorsAfterRefactoring|CloneRefactoringType");
+				"#UnMappedStatements1|#UnMappedStatements2|#Differences|RefactoringWasOK|TestsFailedAfterRefactoring|"
+				+ "HadCompileErrorsAfterRefactoring|CloneRefactoringType|IsTemplateMethodApplicable");
 		preconditionViolationsLines.add("GroupID|PairID|TreeID|PreconditionViolationType");
 		compileErrorsLines.add("GroupID|PairID|TreeID|FileHavingCompileError");
 		testReportDifferencesLines.add("GroupID|PairID|TreeID|TestDifference");
@@ -101,6 +102,7 @@ public class CloneInfoCSVWriter extends CloneInfoWriter {
 				line.append(cloneRefactoringType.ordinal());
 			else 
 				line.append(-1);
+			line.append(SEPARATOR).append(mapperInfo.getMapper().isTemplateMethodApplicable());
 			mappersCSVLines.add(line.toString());
 
 			for (PreconditionViolation pv : mapperInfo.getMapper().getPreconditionViolations()) {
