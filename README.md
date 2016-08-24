@@ -24,7 +24,7 @@ Click Run to test whether the headless plug-in works properly. If you are gettin
     <th>Long option</th>
     <th>Short option</th>
     <th>Arguments</th>
-    <th width="500">Description</th>
+    <th>Description</th>
   </tr>
 	<tr>
 		<td>--help</td>
@@ -191,6 +191,8 @@ Click Run to test whether the headless plug-in works properly. If you are gettin
 		<td>A comma-separated list of email addresses to which the analysis notifications should be sent</td>
 	</tr>
 </table>
+
+**Note:** The **bold-faced** options are mandatory. *Italic* arguments are default values.
 
 ## Mode of Operation
 The headless application works in three different modes.
