@@ -365,26 +365,33 @@ The columns in the order they appear in the CSV files are:
       <td>
         Type of the precondition violation, one of the following values:
         <ul>
-          <li><b>0</b> Expression difference cannot be parameterized</li>
-          <li><b>1</b> Expression difference is field update</li>
-          <li><b>2</b> Expression difference is void method call</li>
-          <li><b>3</b> expression difference is method call throwing exception within matched try block</li>
-          <li><b>4</b> Infeasible unification due to variable type mismatch</li>
-          <li><b>5</b> Infeasible unification due to missing members in the common superclass</li>
-          <li><b>6</b> Unmatched statement cannot be moved before or after the extracted code</li>
-          <li><b>7</b> Unmatched statement cannot be moved before the extracted code due to control dependence</li>
-          <li><b>8</b> Unmatched break statement</li>
-          <li><b>9</b> Unmatched continue statement</li>
-          <li><b>10</b>: Unmatched return statement</li>
-          <li><b>11</b> unmatched throw statement</li>
-          <li><b>12</b> Unmatched exception throwing statement nested within matched try block</li>
-          <li><b>13</b> Multiple returned variables</li>
-          <li><b>14</b> Unequal number of returned variables</li>
-          <li><b>15</b> Single returned variable with different types</li>
-          <li><b>16</b> Break statement without loop</li>
-          <li><b>17</b> Continue statement without loop</li>
-          <li><b>18</b> Conditional return statement</li>
-          <li><b>19</b> Multiple unmatched statements update the same variable</li>
+          <li><b>0</b>: Expression difference cannot be parameterized</li>
+          <li><b>1</b>: Expression difference is field update</li>
+          <li><b>2</b>: Expression difference is void method call</li>
+          <li><b>3</b>: Expression difference is method call throwing exception within matched try block</li>
+          <li><b>4</b>: Infeasible unification due to variable type mismatch</li>
+          <li><b>5</b>: Infeasible unification due to missing members in the common superclass</li>
+          <li><b>6</b>: Infeasible unification due to passed argument type mismatch</li>
+          <li><b>7</b>: Unmatched statement cannot be moved before or after the extracted code</li>
+          <li><b>8</b>: Unmatched statement cannot be moved before the extracted code due to control dependence</li>
+          <li><b>9</b>: Unmatched break statement</li>
+          <li><b>10</b>: Unmatched continue statement</li>
+          <li><b>11</b>: Unmatched return statement</li>
+          <li><b>12</b>: Unmatched throw statement</li>
+          <li><b>13</b>: Unmatched exception throwing statement nested within matched try block</li>
+          <li><b>14</b>: Multiple returned variables</li>
+          <li><b>15</b>: Unequal number of returned variables</li>
+          <li><b>16</b>: Single returned variable with different types</li>
+          <li><b>17</b>: Break statement without loop</li>
+          <li><b>18</b>: Continue statement without loop</li>
+          <li><b>19</b>: Conditional return statement</li>
+          <li><b>20</b>: Switch case statement without switch</li>
+          <li><b>21</b>: Super constructor invocation statement</li>
+          <li><b>22</b>: Super method invocation statement</li>
+          <li><b>23</b>: Multiple unmatched statements update the same variable</li>
+          <li><b>24</b>: Infeasible refactoring due to uncommon superclass</li>
+          <li><b>25</b>: Infeasible refactoring due to zero matched statements</li>
+          <li><b>26</b>: Not all possible execution flows end in return</li>
         </ul>
       </td>
     </tr>
