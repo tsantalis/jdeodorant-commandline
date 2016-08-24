@@ -19,33 +19,178 @@
 Click Run to test whether the headless plug-in works properly. If you are getting BundleExceptions, go back to the "Plug-ins" tab and select Launch with: "all workspace and enabled target plug-ins". Apply the changes and Run again the headless plug-in.
 
 # Command-line arguments
-| Long option |Short option | Arguments | Mandatory | Default value | Description |
-|---|---|---|---|---|---|
-|--help | -? ||No||Displays arguments and their explanations|
-|--mode | -m |`analyze_existing` `parse_and_analyze` `parse`|No|`analyze_existing`|Mode of operation. See below for more information|
-|--project|-p|{project name}|Yes||Name of the project in the Eclipse workspace|
-|--excelfile|-x|{path/to/the/xls/file}|Yes||Path to the input (ouput, in the `PARSE` mode) .xls file|
-|--tool|-t|`clone_tool_ccfinder` `clone_tool_clonedr` `clone_cool_conqat` `clone_tool_deckard` `clone_tool_nicad`|No||Specifies the clone detection tool|
-|--tooloutputfile|-i|{path/to/the/input/file}|No||Path to the main output file of the clone detection tool|
-|--extra-args|-xargs|{arg1, arg2, ...}|No||Comma separated list of extra arguments which are needed in case if we use specific clone detection tools. See below for more information.|
-|--row-start-from|-r|{row}|No||Specifies the row number (starting from 2, row 1 is the header) of which the tool must start the analysis.|
-|--append-results|-a||No||Specifies whether the existing outputs (Excel file, CSV files) must be appended by new results or they must be overridden.|
-|--skip-groups|-s|{group_id1, group_id2, ...}|No||A comma separated list of clone group IDs to be skipped from the analysis.|
-|--test-packages|-testpkgs|{group_id1, group_id2, ...}|No||A comma separated list of the fully-qualified names of the packages containing test code.|
-|--test-source-folders|-testsrcs|{folder1,folder2,...}|No||A comma separated list of the source folder names containing test code. This is similar to the previous argument.|
-|--coverage-report|-cr||No||Run tests after applying each refactoring and generate coverage report.|
-|--run-tests|-rt||No||Run tests after applying each refactoring.|
-|--log-to-file|-l||No||Create a log file from console output.|
-|--group-ids|-g|{id1, id2, id3, ...}|No||A comma-separated list of clone group IDs to be analyzed. Other clone groups in the file will be skipped|
-|--debugging-enabled|-de||No||Prevent Eclipse command-line tool to cancel jobs queued in Eclipse JobManager such as workbench job, etc., so that debugging is possible in Eclipse|
-|--mail-server-ip|-msrvr|{Mail server address}|No|127.0.0.1|Email server for sending emails after analysis finished|
-|--mail-server-port|-mport|{Mail server port}|No|25|Email server port, see previous option|
-|--mail-server-security-type|-msectype|`NONE` `SSL` `STARTLS`|No|`NONE`|Security type for mail server|
-|--mail-server-authenticated|-mauth||No||Is SMTP server authenticated|
-|--mail-server-user-name|-muser|{Mail server user name}|No||SMTP user name|
-|--mail-server-password|-mpass|{Mail server password}|No||SMTP password|
-|--email-addresses|-em|{email1, email2, ...}|No||A comma-separated list of email addresses to which the analysis notifications should be sent
-
+<table>
+  <tr>
+    <th>Long option</th>
+    <th>Short option</th>
+    <th>Arguments</th>
+    <th width="500">Description</th>
+  </tr>
+	<tr>
+		<td>--help</td>
+		<td>-?</td>
+		<td></td>
+		<td>Displays arguments and their explanations</td>
+	</tr>
+	<tr>
+		<td>--mode </td>
+		<td> -m </td>
+		<td>
+      <em><code>analyze_existing</code></em><br />
+      <code>parse_and_analyze</code><br />
+      <code>parse</code>
+    </td>
+		<td>Mode of operation. See below for more information</td>
+	</tr>
+	<tr>
+		<td><b>--project</b></td>
+		<td><b>-p</b></td>
+		<td>{project name}</td>
+		<td>Name of the project in the Eclipse workspace</td>
+	</tr>
+	<tr>
+		<td><b>--excelfile</b></td>
+		<td><b>-x</b></td>
+		<td>{path/to/the/xls/file}</td>
+		<td>Path to the input (ouput, in the <code>PARSE</code> mode) .xls file</td>
+	</tr>
+  <tr>
+		<td>--tool</td>
+		<td>-t</td>
+		<td>
+      <code>clone_tool_ccfinder</code><br />
+      <code>clone_tool_clonedr</code><br />
+      <code>clone_cool_conqat</code><br />
+      <code>clone_tool_deckard</code><br />
+      <code>clone_tool_nicad</code>
+    </td>
+		<td>Specifies the clone detection tool</td>
+	</tr>
+	<tr>
+		<td>--tooloutputfile</td>
+		<td>-i</td>
+		<td>{path/to/the/input/file}</td>
+		<td>Path to the main output file of the clone detection tool</td>
+	</tr>
+	<tr>
+		<td>--extra-args</td>
+		<td>-xargs</td>
+		<td>{arg1, arg2, ...}</td>
+		<td>Comma separated list of extra arguments which are needed in case if we use specific clone detection tools. See below for more information.</td>
+	</tr>
+	<tr>
+		<td>--row-start-from</td>
+		<td>-r</td>
+		<td>{row}</td>
+		<td>Specifies the row number (starting from 2, row 1 is the header) of which the tool must start the analysis.</td>
+	</tr>
+	<tr>
+		<td>--append-results</td>
+		<td>-a</td>
+		<td></td>
+		<td>Specifies whether the existing outputs (Excel file, CSV files) must be appended by new results or they must be overridden.</td>
+	</tr>
+	<tr>
+		<td>--skip-groups</td>
+		<td>-s</td>
+		<td>{group_id1, group_id2, ...}</td>
+		<td>A comma separated list of clone group IDs to be skipped from the analysis.</td>
+	</tr>
+	<tr>
+		<td>--test-packages</td>
+		<td>-testpkgs</td>
+		<td>{group_id1, group_id2, ...}</td>
+		<td>A comma separated list of the fully-qualified names of the packages containing test code.</td>
+	</tr>
+	<tr>
+		<td>--test-source-folders</td>
+		<td>-testsrcs</td>
+		<td>{folder1,folder2,...}</td>
+		<td>A comma separated list of the source folder names containing test code. This is similar to the previous argument.</td>
+	</tr>
+	<tr>
+		<td>--coverage-report</td>
+		<td>-cr</td>
+		<td></td>
+		<td>Run tests after applying each refactoring and generate coverage report.</td>
+	</tr>
+	<tr>
+		<td>--run-tests</td>
+		<td>-rt</td>
+		<td></td>
+		<td>Run tests after applying each refactoring.</td>
+	</tr>
+	<tr>
+		<td>--log-to-file</td>
+		<td>-l</td>
+		<td></td>
+		<td>Create a log file from console output.</td>
+	</tr>
+	<tr>
+		<td>--group-ids</td>
+		<td>-g</td>
+		<td>{id1, id2, id3, ...}</td>
+		<td>A comma-separated list of clone group IDs to be analyzed. Other clone groups in the file will be skipped</td>
+	</tr>
+	<tr>
+		<td>--debugging-enabled</td>
+		<td>-de</td>
+		<td></td>
+		<td>Prevent Eclipse command-line tool to cancel jobs queued in Eclipse JobManager such as workbench job, etc., so that debugging is possible in Eclipse</td>
+	</tr>
+	<tr>
+		<td>--mail-server-ip</td>
+		<td>-msrvr</td>
+		<td>
+      {Mail server address}<br />
+      <em>127.0.0.1</em>
+    </td>
+		<td>Email server for sending emails after analysis finished</td>
+	</tr>
+	<tr>
+		<td>--mail-server-port</td>
+		<td>-mport</td>
+		<td>
+      {Mail server port}<br />
+      <em>25</em>
+    </td>
+		<td>Email server port, see previous option</td>
+	</tr>
+	<tr>
+		<td>--mail-server-security-type</td>
+		<td>-msectype</td>
+		<td>
+      <em><code>NONE</code></em><br />
+      <code>SSL</code><br />
+      <code>STARTLS</code>
+    </td>
+		<td>Security type for mail server</td>
+	</tr>
+	<tr>
+		<td>--mail-server-authenticated</td>
+		<td>-mauth</td>
+		<td></td>
+		<td>Is SMTP server authenticated</td>
+	</tr>
+	<tr>
+		<td>--mail-server-user-name</td>
+		<td>-muser</td>
+		<td>{Mail server user name}</td>
+		<td>SMTP user name</td>
+	</tr>
+	<tr>
+		<td>--mail-server-password</td>
+		<td>-mpass</td>
+		<td>{Mail server password}</td>
+		<td>SMTP password</td>
+	</tr>
+	<tr>
+		<td>--email-addresses</td>
+		<td>-em</td>
+		<td>{email1, email2, ...}</td>
+		<td>A comma-separated list of email addresses to which the analysis notifications should be sent</td>
+	</tr>
+</table>
 
 ## Mode of Operation
 The headless application works in three different modes.
