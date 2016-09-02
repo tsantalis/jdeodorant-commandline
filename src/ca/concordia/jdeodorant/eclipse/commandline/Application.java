@@ -38,7 +38,6 @@ import org.slf4j.Logger;
 import ca.concordia.jdeodorant.eclipse.commandline.ApplicationRunner.TestReportFileType;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser;
 import ca.concordia.jdeodorant.eclipse.commandline.cli.CLIParser.ApplicationMode;
-import ca.concordia.jdeodorant.eclipse.commandline.coverage.LineCoverage;
 import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults;
 import ca.concordia.jdeodorant.eclipse.commandline.coverage.TestReportResults.TestReportDifference;
 import ca.concordia.jdeodorant.eclipse.commandline.utility.FileLogger;
@@ -136,7 +135,7 @@ public class Application implements IApplication {
 	
 	private void testRefactorings(IJavaProject iJavaProject, File originalExcelFile) {
 		boolean shouldRunTests = true;
-		LOGGER.info("Testing refactorabiliy in " + originalExcelFile.getAbsolutePath());
+		LOGGER.info("Testing refactorability in " + originalExcelFile.getAbsolutePath());
 
 		TestReportResults originalTestReport = null;
 		if (cliParser.runTests() || cliParser.hasCoverageReport())
@@ -145,17 +144,21 @@ public class Application implements IApplication {
 		LOGGER.info("Started detecting refactoring opportunities");
 		List<MoveMethodCandidateRefactoring> refactorings = Standalone.getMoveMethodRefactoringOpportunities(iJavaProject);
 		LOGGER.info("Finished detecting refactoring opportunities");
+		LOGGER.info("Number of detected refactoring opportunities: " + refactorings.size());
 		
+		int i=1;
 		for(MoveMethodCandidateRefactoring candidate : refactorings) {
+			LOGGER.info("Refactoring opportunity: " + i + " out of " + refactorings.size());
 			Refactoring refactoring = new MoveMethodRefactoring((CompilationUnit)candidate.getSourceClassTypeDeclaration().getRoot(),
 					(CompilationUnit)candidate.getTargetClassTypeDeclaration().getRoot(),
 					candidate.getSourceClassTypeDeclaration(), candidate.getTargetClassTypeDeclaration(), candidate.getSourceMethodDeclaration(),
 					candidate.getAdditionalMethodsToBeMoved(), candidate.leaveDelegate(), candidate.getMovedMethodName());
 			testRefactoring(iJavaProject, originalExcelFile, shouldRunTests, originalTestReport, refactoring);
+			i++;
 		}
 		try {
 			iJavaProject.getProject().getWorkspace().save(true, new NullProgressMonitor());
-			LOGGER.info("Finished testing refactorabiliy in " + originalExcelFile.getAbsolutePath());
+			LOGGER.info("Finished testing refactorability in " + originalExcelFile.getAbsolutePath());
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
