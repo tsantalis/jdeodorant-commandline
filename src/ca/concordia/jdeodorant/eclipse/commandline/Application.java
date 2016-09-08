@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.IMarker;
@@ -45,7 +46,11 @@ import ca.concordia.jdeodorant.eclipse.commandline.utility.Mailer;
 import gr.uom.java.ast.ASTReader;
 import gr.uom.java.ast.CompilationErrorDetectedException;
 import gr.uom.java.ast.Standalone;
+import gr.uom.java.distance.CandidateRefactoring;
+import gr.uom.java.distance.ExtractClassCandidateGroup;
+import gr.uom.java.distance.ExtractClassCandidateRefactoring;
 import gr.uom.java.distance.MoveMethodCandidateRefactoring;
+import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractClassRefactoring;
 import gr.uom.java.jdeodorant.refactoring.manipulators.MoveMethodRefactoring;
 
 @SuppressWarnings("restriction")
@@ -142,14 +147,19 @@ public class Application implements IApplication {
 			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.ORIGINAL);
 		
 		LOGGER.info("Started detecting refactoring opportunities");
-		List<MoveMethodCandidateRefactoring> refactorings = Standalone.getMoveMethodRefactoringOpportunities(iJavaProject);
+		//List<MoveMethodCandidateRefactoring> refactorings = Standalone.getMoveMethodRefactoringOpportunities(iJavaProject);
+		List<ExtractClassCandidateRefactoring> refactorings = new ArrayList<ExtractClassCandidateRefactoring>();
+		Set<ExtractClassCandidateGroup> candidateGroups = Standalone.getExtractClassRefactoringOpportunities(iJavaProject);
+		for(ExtractClassCandidateGroup candidateGroup : candidateGroups) {
+			refactorings.addAll(candidateGroup.getCandidates());
+		}
 		LOGGER.info("Finished detecting refactoring opportunities");
 		LOGGER.info("Number of detected refactoring opportunities: " + refactorings.size());
 		
 		int i=1;
-		for(MoveMethodCandidateRefactoring candidate : refactorings) {
+		for(CandidateRefactoring candidate : refactorings) {
 			LOGGER.info("Refactoring opportunity: " + i + " out of " + refactorings.size());
-			Refactoring refactoring = generateMoveMethodRefactoring(candidate);
+			Refactoring refactoring = generateRefactoring(candidate);
 			testRefactoring(iJavaProject, originalExcelFile, shouldRunTests, originalTestReport, refactoring);
 			i++;
 		}
@@ -159,6 +169,24 @@ public class Application implements IApplication {
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private Refactoring generateRefactoring(CandidateRefactoring candidate) {
+		if(candidate instanceof MoveMethodCandidateRefactoring) {
+			return generateMoveMethodRefactoring((MoveMethodCandidateRefactoring)candidate);
+		}
+		else if(candidate instanceof ExtractClassCandidateRefactoring) {
+			return generateExtractClassRefactoring((ExtractClassCandidateRefactoring)candidate);
+		}
+		return null;
+	}
+
+	private ExtractClassRefactoring generateExtractClassRefactoring(ExtractClassCandidateRefactoring candidate) {
+		String[] tokens = candidate.getTargetClassName().split("\\.");
+		String extractedClassName = tokens[tokens.length-1];
+		return new ExtractClassRefactoring(candidate.getSourceIFile(), (CompilationUnit)candidate.getSourceClassTypeDeclaration().getRoot(),
+				candidate.getSourceClassTypeDeclaration(), candidate.getExtractedFieldFragments(), candidate.getExtractedMethods(),
+				candidate.getDelegateMethods(), extractedClassName);
 	}
 
 	private MoveMethodRefactoring generateMoveMethodRefactoring(MoveMethodCandidateRefactoring candidate) {
