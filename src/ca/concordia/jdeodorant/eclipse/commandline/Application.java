@@ -149,10 +149,7 @@ public class Application implements IApplication {
 		int i=1;
 		for(MoveMethodCandidateRefactoring candidate : refactorings) {
 			LOGGER.info("Refactoring opportunity: " + i + " out of " + refactorings.size());
-			Refactoring refactoring = new MoveMethodRefactoring((CompilationUnit)candidate.getSourceClassTypeDeclaration().getRoot(),
-					(CompilationUnit)candidate.getTargetClassTypeDeclaration().getRoot(),
-					candidate.getSourceClassTypeDeclaration(), candidate.getTargetClassTypeDeclaration(), candidate.getSourceMethodDeclaration(),
-					candidate.getAdditionalMethodsToBeMoved(), candidate.leaveDelegate(), candidate.getMovedMethodName());
+			Refactoring refactoring = generateMoveMethodRefactoring(candidate);
 			testRefactoring(iJavaProject, originalExcelFile, shouldRunTests, originalTestReport, refactoring);
 			i++;
 		}
@@ -162,6 +159,13 @@ public class Application implements IApplication {
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private MoveMethodRefactoring generateMoveMethodRefactoring(MoveMethodCandidateRefactoring candidate) {
+		return new MoveMethodRefactoring((CompilationUnit)candidate.getSourceClassTypeDeclaration().getRoot(),
+				(CompilationUnit)candidate.getTargetClassTypeDeclaration().getRoot(),
+				candidate.getSourceClassTypeDeclaration(), candidate.getTargetClassTypeDeclaration(), candidate.getSourceMethodDeclaration(),
+				candidate.getAdditionalMethodsToBeMoved(), candidate.leaveDelegate(), candidate.getMovedMethodName());
 	}
 
 	private void testRefactoring(IJavaProject iJavaProject, File originalExcelFile, boolean shouldRunTests, TestReportResults originalTestReport, Refactoring refactoring) {
