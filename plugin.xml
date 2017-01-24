@@ -10,5 +10,17 @@
          </run>
          </application>
    </extension>
+   <extension
+         id="jdproduct"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="ca.concordia.jdeodorant.eclipse.commandline-lambda.application"
+            name="JDeodorant-Commandline-Product-Configuration">
+         <property
+               name="appName"
+               value="JDeodorant-Commandline-Product-Configuration">
+         </property>
+      </product>
+   </extension>
 
 </plugin>
