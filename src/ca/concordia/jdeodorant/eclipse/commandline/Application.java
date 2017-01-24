@@ -11,6 +11,7 @@ import java.util.Set;
 import org.eclipse.core.internal.resources.ResourceException;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -19,6 +20,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.IJobChangeListener;
 import org.eclipse.core.runtime.jobs.IJobManager;
@@ -74,11 +76,39 @@ public class Application implements IApplication {
 
 				ApplicationMode applicationMode = cliParser.getApplicationMode(ApplicationMode.ANALYZE_EXISTING);
 
-				String projectName = cliParser.getProjectName();
-				// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
-				IJavaProject jProject = getJavaProject(projectName, applicationMode != ApplicationMode.PARSE);
+				String projectName = "";
+				IJavaProject jProject = null;
+				if (cliParser.getProjectDescritionFile() != null) {
+					IProjectDescription description = ResourcesPlugin.getWorkspace().
+						loadProjectDescription(new Path(cliParser.getProjectDescritionFile()));
+					projectName = description.getName();
+					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
+					if(!project.exists()) {
+						project.create(description, null);
+					} else {
+						project.refreshLocal(IResource.DEPTH_INFINITE, null);
+					}
+					if (!project.isOpen()) {
+						project.open(null);
+					}
+					if(project.hasNature(JavaCore.NATURE_ID)) {
+						jProject = JavaCore.create(project);
+						if(!jProject.hasBuildState()) {
+							project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+							LOGGER.info("Project " + project.getName() + " was built");
+						}
+					}					
+				} else if (cliParser.getProjectName() != null) {
+					projectName = cliParser.getProjectName();
+					jProject = findJavaProjectInWorkspace(projectName);
+				}
+				
 				if (jProject == null) {
 					throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
+				}
+				// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
+				if (applicationMode != ApplicationMode.PARSE) {
+					parseJavaProject(jProject);
 				}
 				if (!cliParser.isDebuggingEnabled())
 					handleScheduledJobsByEclipse();
@@ -350,35 +380,34 @@ public class Application implements IApplication {
 	 * @return
 	 * @throws CoreException
 	 */
-	private IJavaProject getJavaProject(String projectName, boolean makeASTNodes) throws CoreException {
+	private IJavaProject findJavaProjectInWorkspace(String projectName) throws CoreException {
 		IJavaProject jProject = null;
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot root = workspace.getRoot();
 		IProject[] projects = root.getProjects();
 		for(IProject project : projects) {
 			if(project.isOpen() && project.hasNature(JavaCore.NATURE_ID) && project.getName().equals(projectName)) {
-
 				jProject = JavaCore.create(project);
 				LOGGER.info("Project " + projectName + " was found in the workspace");
-
-				if (makeASTNodes) {
-					LOGGER.info("Now parsing the project");
-					try {
-						if(ASTReader.getSystemObject() != null && jProject.equals(ASTReader.getExaminedProject())) {
-							new ASTReader(jProject, ASTReader.getSystemObject(), null);
-						}
-						else {
-							new ASTReader(jProject, null);
-						}
-					} catch(CompilationErrorDetectedException e) {
-						LOGGER.info("Project contains compilation errors");
-					}
-					LOGGER.info("Finished parsing");
-				}
 				break;
 			}
 		}
 		return jProject;
+	}
+	
+	private void parseJavaProject(IJavaProject jProject) {
+		LOGGER.info("Now parsing the project");
+		try {
+			if(ASTReader.getSystemObject() != null && jProject.equals(ASTReader.getExaminedProject())) {
+				new ASTReader(jProject, ASTReader.getSystemObject(), null);
+			}
+			else {
+				new ASTReader(jProject, null);
+			}
+		} catch(CompilationErrorDetectedException e) {
+			LOGGER.info("Project contains compilation errors");
+		}
+		LOGGER.info("Finished parsing");
 	}
 
 	@Override
