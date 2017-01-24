@@ -74,6 +74,13 @@ public class CLIParser {
 				.withDescription("Exact name of the project opened in the workspace")
 				.hasArg()
 				.create("p"));
+		
+		options.addOption(OptionBuilder
+				.withArgName("")
+				.withLongOpt("project-description")
+				.withDescription("Path to the .project file of the project")
+				.hasArg()
+				.create("pd"));
 
 		options.addOption(OptionBuilder
 				.withArgName("")
@@ -459,5 +466,9 @@ public class CLIParser {
 		} catch (IllegalArgumentException ex) {
 			return SecurityType.NONE;
 		}
+	}
+
+	public String getProjectDescritionFile() {
+		return getValue("project-description");
 	}
 }
