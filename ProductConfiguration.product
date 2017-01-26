@@ -31,6 +31,7 @@
       <plugin id="com.ibm.icu"/>
       <plugin id="gr.uom.java.jdeodorant"/>
       <plugin id="javax.inject"/>
+      <plugin id="javax.servlet"/>
       <plugin id="javax.xml"/>
       <plugin id="org.apache.batik.css"/>
       <plugin id="org.apache.batik.util"/>
@@ -83,6 +84,7 @@
       <plugin id="org.eclipse.equinox.app"/>
       <plugin id="org.eclipse.equinox.bidi"/>
       <plugin id="org.eclipse.equinox.common"/>
+      <plugin id="org.eclipse.equinox.event"/>
       <plugin id="org.eclipse.equinox.frameworkadmin"/>
       <plugin id="org.eclipse.equinox.frameworkadmin.equinox"/>
       <plugin id="org.eclipse.equinox.p2.core"/>
@@ -107,6 +109,7 @@
       <plugin id="org.eclipse.jdt.junit.core"/>
       <plugin id="org.eclipse.jdt.junit.runtime"/>
       <plugin id="org.eclipse.jdt.launching"/>
+      <plugin id="org.eclipse.jdt.launching.macosx"/>
       <plugin id="org.eclipse.jdt.ui"/>
       <plugin id="org.eclipse.jface"/>
       <plugin id="org.eclipse.jface.databinding"/>
