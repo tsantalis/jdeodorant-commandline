@@ -31,7 +31,6 @@ import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -85,18 +84,12 @@ public class Application implements IApplication {
 					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
 					if(!project.exists()) {
 						project.create(description, null);
-					} else {
-						project.refreshLocal(IResource.DEPTH_INFINITE, null);
 					}
 					if (!project.isOpen()) {
 						project.open(null);
 					}
 					if(project.hasNature(JavaCore.NATURE_ID)) {
 						jProject = JavaCore.create(project);
-						if(!jProject.hasBuildState()) {
-							project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
-							LOGGER.info("Project " + project.getName() + " was built");
-						}
 					}					
 				} else if (cliParser.getProjectName() != null) {
 					projectName = cliParser.getProjectName();
@@ -123,7 +116,7 @@ public class Application implements IApplication {
 				
 				String excelFileParentDirectory = replaceBackSlasheshWithSlashes(excelFile.getParent()) + "/";
 				
-				if (cliParser.hasCoverageReport()) {
+				if (cliParser.runTests()) {
 					ApplicationRunner runner;
 					try {
 						runner = new ApplicationRunner(jProject, cliParser.getClassFolder(), excelFileParentDirectory);
@@ -169,11 +162,17 @@ public class Application implements IApplication {
 	}
 	
 	private void testRefactorings(IJavaProject iJavaProject, File originalExcelFile) {
-		boolean shouldRunTests = true;
+		/*
+		 * Keeping this is important, as we check for these options
+		 * in different places in the code, and we might go inconsistent if we don't do it.
+		 * Please pass -rt command line argument if you want to run tests.
+		 * Also pass java compilation output folder using -cf (e.g., -cf "bin")
+		 */
+		boolean shouldRunTests = cliParser.runTests();
 		LOGGER.info("Testing refactorability in " + originalExcelFile.getAbsolutePath());
 
 		TestReportResults originalTestReport = null;
-		if (cliParser.runTests() || cliParser.hasCoverageReport())
+		if (shouldRunTests)
 			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.ORIGINAL);
 		
 		LOGGER.info("Started detecting refactoring opportunities");
@@ -405,6 +404,7 @@ public class Application implements IApplication {
 				new ASTReader(jProject, null);
 			}
 		} catch(CompilationErrorDetectedException e) {
+			e.printStackTrace(System.err);
 			LOGGER.info("Project contains compilation errors");
 		}
 		LOGGER.info("Finished parsing");
