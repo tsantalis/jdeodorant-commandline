@@ -6,8 +6,14 @@
 3. Click on "Eclipse Application" and then on the "New launch configuration" button. Give a name to the newly created launch configuration.
 
 4. In the "Main" tab:
-  * In the "Workspace Data" setup the "Location" to point to the workspace containing the projects that you want to analyze in headless mode. This must be a workspace directory created by Eclipse. You can create such a workspace by clicking on "File" > "Switch Workspace" and specifying a new workspace directory.
-  * In the "Program to Run" select to "Run an application" and from the drop-down list select "ca.concordia.jdeodorant.eclipse.commandline.application".
+    * In the "Workspace Data" setup the "Location" to point to the workspace containing the projects that you want to analyze in headless mode.
+	The projects which are going to be analyzed will be opened in this workspace. 
+	There are two options to open a Java project (that you are going to analyze) in the workspace:
+		- The workspace directory is created by Eclipse. In this case, it can be created by clicking on "File" > "Switch Workspace" and specifying a new workspace directory, and then manually opening (or importing) a project to Eclipse. After you are done, you should switch back to the original workspace where JDeodorant and this plug-in are imported.
+		- You can ask the tool to try importing an existing Eclipse project automatically. In this case, the workspace is created in the given path by the tool, and the project is imported to it. You'll need to use the `-pd` switch to specify the path to the `.project` file. See the table below.
+	
+        Note that, in any case, Eclipse project files should exist for the Java project that you want to analyze.
+	* In the "Program to Run" select to "Run an application" and from the drop-down list select "ca.concordia.jdeodorant.eclipse.commandline.application".
 
 5. In the "Arguments" tab specify the "Program arguments" as in the following sections.
 
@@ -17,6 +23,8 @@
 
 8. Apply the changes in order to save the new Launch Configuration.
 Click Run to test whether the headless plug-in works properly. If you are getting BundleExceptions, go back to the "Plug-ins" tab and select Launch with: "all workspace and enabled target plug-ins". Apply the changes and Run again the headless plug-in.
+
+
 
 # Command-line arguments
 <table>
@@ -47,6 +55,12 @@ Click Run to test whether the headless plug-in works properly. If you are gettin
 		<td><b>-p</b></td>
 		<td>{project name}</td>
 		<td>Name of the project in the Eclipse workspace</td>
+	</tr>
+	<tr>
+		<td><b>--project-description</b></td>
+		<td><b>-pd</b></td>
+		<td>{.project file}</td>
+		<td>Path to the `.project` file of the eclipse project to be imported to the workspace</td>
 	</tr>
 	<tr>
 		<td><b>--excelfile</b></td>
