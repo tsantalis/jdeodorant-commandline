@@ -291,8 +291,9 @@ public class Application implements IApplication {
 		LOGGER.info("Testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath());
 
 		TestReportResults originalTestReport = null;
-		if (cliParser.runTests() || cliParser.hasCoverageReport())
-			originalTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.ORIGINAL);
+		if (cliParser.runTests() || cliParser.hasCoverageReport()) {
+			originalTestReport = runUnitTests(iJavaProject, TestReportFileType.ORIGINAL);
+		}
 
 		/*
 		 * If we have to append the results, first we check to see 
@@ -650,11 +651,7 @@ public class Application implements IApplication {
 											} else { 
 												if (shouldRunTests) {
 													// Run tests here and see if they pass
-													LOGGER.info("Started running unit tests");
-													new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
-													LOGGER.info("Finished running unit tests");
-													LOGGER.info("Reading unit tests reports file");
-													TestReportResults newTestReport = ApplicationRunner.readTestFile(originalExcelFile.getParent(), TestReportFileType.AFTER_REFACTORING);
+													TestReportResults newTestReport = runUnitTests(iJavaProject, TestReportFileType.AFTER_REFACTORING);
 													LOGGER.info("Comparing test results");
 													List<TestReportDifference> compareTestResults = newTestReport.compareTestResults(originalTestReport);
 													if (compareTestResults.size() != 0) {
@@ -766,6 +763,16 @@ public class Application implements IApplication {
 
 		LOGGER.info("Finished testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath() + ", output file: " + copyWorkBookFile.getAbsolutePath());
 
+	}
+
+	private TestReportResults runUnitTests(IJavaProject iJavaProject, TestReportFileType reportFileType) throws CoreException, IOException {
+		LOGGER.info("Started running unit tests");
+		new ApplicationRunner(iJavaProject, cliParser.getClassFolder(), new File(cliParser.getExcelFilePath()).getParent().toString()).launchTest();
+		LOGGER.info("Finished running unit tests");
+		LOGGER.info("Reading unit tests report file");
+		TestReportResults newTestReport = ApplicationRunner.readTestFile(new File(cliParser.getExcelFilePath()).getParent(), reportFileType);
+		LOGGER.info("Finished reading unit tests report file");
+		return newTestReport;
 	}
 
 	private String getComputerName() {
