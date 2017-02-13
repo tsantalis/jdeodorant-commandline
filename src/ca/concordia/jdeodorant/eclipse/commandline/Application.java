@@ -156,22 +156,16 @@ public class Application implements IApplication {
 					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
 					if(!project.exists()) {
 						project.create(description, null);
-					} else {
-						project.refreshLocal(IResource.DEPTH_INFINITE, null);
 					}
 					if (!project.isOpen()) {
 						project.open(null);
 					}
 					if(project.hasNature(JavaCore.NATURE_ID)) {
 						jProject = JavaCore.create(project);
-						if(!jProject.hasBuildState()) {
-							project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
-							LOGGER.info("Project " + project.getName() + " was built");
-						}
 					}					
 				} else if (cliParser.getProjectName() != null) {
 					projectName = cliParser.getProjectName();
-					jProject = getJavaProject(projectName);
+					jProject = findJavaProjectInWorkspace(projectName);
 				}
 				
 				if (jProject == null) {
@@ -240,64 +234,6 @@ public class Application implements IApplication {
 		}
 
 		return IApplication.EXIT_OK;
-	}
-	
-	private String getComputerName() {
-		String hostname = "Unknown";
-		try {
-			InetAddress addr;
-			addr = InetAddress.getLocalHost();
-			hostname = addr.getHostName();
-		} catch (UnknownHostException ex) {
-			LOGGER.warn("Hostname can not be resolved");
-		}
-		return hostname;
-	}
-
-	/**
-	 * This method will cancel following jobs to prevent memory leak by IndexManager and increasing execution performance
-	 * Debug Event Dispatch
-	 * Updating encoding settings.
-	 * Periodic workspace save.
-	 * Building workspace
-	 * Java indexing..
-	 * These jobs run automatically by Eclipse
-	 */
-	private void handleScheduledJobsByEclipse() {
-		IJobManager jobManager = Job.getJobManager();
-		jobManager.addJobChangeListener(new IJobChangeListener() {
-
-			@Override
-			public void sleeping(IJobChangeEvent jobChangeEvent) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void scheduled(IJobChangeEvent jobChangeEvent) {
-				jobChangeEvent.getJob().cancel();
-			}
-
-			@Override
-			public void running(IJobChangeEvent jobChangeEvent) {
-			}
-
-			@Override
-			public void done(IJobChangeEvent jobChangeEvent) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void awake(IJobChangeEvent jobChangeEvent) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void aboutToRun(IJobChangeEvent jobChangeEvent) {
-			}
-		});
 	}
 
 	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) throws InvalidInputFileException {
@@ -832,6 +768,61 @@ public class Application implements IApplication {
 
 	}
 
+	private String getComputerName() {
+		String hostname = "Unknown";
+		try {
+			InetAddress addr;
+			addr = InetAddress.getLocalHost();
+			hostname = addr.getHostName();
+		} catch (UnknownHostException ex) {
+			LOGGER.warn("Hostname can not be resolved");
+		}
+		return hostname;
+	}
+
+	/**
+	 * This method will cancel following jobs to prevent memory leak by IndexManager and increasing execution performance
+	 * Debug Event Dispatch
+	 * Updating encoding settings.
+	 * Periodic workspace save.
+	 * Building workspace
+	 * Java indexing..
+	 * These jobs run automatically by Eclipse
+	 */
+	private void handleScheduledJobsByEclipse() {
+		IJobManager jobManager = Job.getJobManager();
+		jobManager.addJobChangeListener(new IJobChangeListener() {
+
+			@Override
+			public void sleeping(IJobChangeEvent jobChangeEvent) {
+
+			}
+
+			@Override
+			public void scheduled(IJobChangeEvent jobChangeEvent) {
+				jobChangeEvent.getJob().cancel();
+			}
+
+			@Override
+			public void running(IJobChangeEvent jobChangeEvent) {
+			}
+
+			@Override
+			public void done(IJobChangeEvent jobChangeEvent) {
+				
+			}
+
+			@Override
+			public void awake(IJobChangeEvent jobChangeEvent) {
+
+			}
+
+			@Override
+			public void aboutToRun(IJobChangeEvent jobChangeEvent) {
+			}
+		});
+	}
+	
 	private List<IMarker> buildProject(IJavaProject iJavaProject, IProgressMonitor npm)
 			throws CoreException {
 		IProject project = iJavaProject.getProject();
@@ -909,7 +900,7 @@ public class Application implements IApplication {
 	 * @return
 	 * @throws CoreException
 	 */
-	private IJavaProject getJavaProject(String projectName) throws CoreException {
+	private IJavaProject findJavaProjectInWorkspace(String projectName) throws CoreException {
 		IJavaProject jProject = null;
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot root = workspace.getRoot();
