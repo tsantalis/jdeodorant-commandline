@@ -162,12 +162,6 @@ public class CLIParser {
 				.create("testsrcs"));
 
 		options.addOption(OptionBuilder
-				.withLongOpt("coverage-report")
-				.withDescription("Launch application to generate coverage report")
-				.hasOptionalArg()
-				.create("cr"));
-
-		options.addOption(OptionBuilder
 				.withArgName("")
 				.withLongOpt("class-folder")
 				.withDescription("Name of class folder which .class files are located")

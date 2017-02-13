@@ -109,12 +109,6 @@ Click Run to test whether the headless plug-in works properly. If you are gettin
 		<td>A comma separated list of the source folder names containing test code. This is similar to the previous argument.</td>
 	</tr>
 	<tr>
-		<td>--coverage-report</td>
-		<td>-cr</td>
-		<td></td>
-		<td>Run tests after applying each refactoring and generate coverage report.</td>
-	</tr>
-	<tr>
 		<td>--run-tests</td>
 		<td>-rt</td>
 		<td></td>
