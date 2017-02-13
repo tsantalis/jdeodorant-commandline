@@ -291,7 +291,7 @@ public class Application implements IApplication {
 		LOGGER.info("Testing refactorabiliy of clones in " + originalExcelFile.getAbsolutePath());
 
 		TestReportResults originalTestReport = null;
-		if (cliParser.runTests() || cliParser.hasCoverageReport()) {
+		if (cliParser.runTests()) {
 			originalTestReport = runUnitTests(iJavaProject, TestReportFileType.ORIGINAL);
 		}
 
@@ -465,9 +465,6 @@ public class Application implements IApplication {
 				int numberOfRefactorablePairs = 0;
 
 				PDG[] pdgArray = new PDG[cloneGroupSize];
-				
-				boolean shouldRunTests = cliParser.runTests() || cliParser.hasCoverageReport();
-
 
 				for (int firstCloneNumber = 0; firstCloneNumber < cloneGroupSize - 1; firstCloneNumber++) {
 
@@ -621,7 +618,7 @@ public class Application implements IApplication {
 							numberOfRefactorablePairs++;
 
 						boolean clonesCoveredByTests = firstCloneCoverage > 0 || secondCloneCoverage > 0;
-						if (!shouldRunTests || (shouldRunTests && clonesCoveredByTests)) {
+						if (!cliParser.runTests() || (cliParser.runTests() && clonesCoveredByTests)) {
 							for (PDGSubTreeMapperInfo pdgSubTreeMapperInfo : clonePairInfo.getPDFSubTreeMappersInfoList()) {
 								if (pdgSubTreeMapperInfo.getMapper().getMaximumStateWithMinimumDifferences() != null) {
 									// Create a list with one mapper, because ExtractCloneRefactoring needs a list
@@ -649,7 +646,7 @@ public class Application implements IApplication {
 												}
 												LOGGER.warn("Compile errors occured during refactoring");
 											} else { 
-												if (shouldRunTests) {
+												if (cliParser.runTests()) {
 													// Run tests here and see if they pass
 													TestReportResults newTestReport = runUnitTests(iJavaProject, TestReportFileType.AFTER_REFACTORING);
 													LOGGER.info("Comparing test results");
