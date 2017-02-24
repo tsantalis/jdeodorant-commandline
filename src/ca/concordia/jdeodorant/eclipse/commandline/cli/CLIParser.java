@@ -50,7 +50,11 @@ public class CLIParser {
 		 * Only analyze the existing excel file create from a parse execution of
 		 * this tool using PARSE mode
 		 */
-		ANALYZE_EXISTING, Refactor,
+		ANALYZE_EXISTING, Refactor, 
+		/**
+		 * Detect opportunities and print them to the console
+		 */
+		PRINT_OPPORTUNITIES,
 	}
 
 	private CommandLine cmdLine;

@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.eclipse.core.filebuffers.FileBuffers;
@@ -98,6 +99,7 @@ import gr.uom.java.ast.AbstractMethodDeclaration;
 import gr.uom.java.ast.ClassDeclarationObject;
 import gr.uom.java.ast.CompilationErrorDetectedException;
 import gr.uom.java.ast.CompilationUnitCache;
+import gr.uom.java.ast.Standalone;
 import gr.uom.java.ast.SystemObject;
 import gr.uom.java.ast.decomposition.cfg.CFG;
 import gr.uom.java.ast.decomposition.cfg.PDG;
@@ -112,7 +114,14 @@ import gr.uom.java.ast.decomposition.cfg.mapping.DivideAndConquerMatcher;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGMapper;
 import gr.uom.java.ast.decomposition.cfg.mapping.PDGRegionSubTreeMapper;
 import gr.uom.java.ast.decomposition.matching.NodePairComparisonCache;
+import gr.uom.java.distance.ExtractClassCandidateGroup;
+import gr.uom.java.distance.ExtractClassCandidateRefactoring;
+import gr.uom.java.distance.MoveMethodCandidateRefactoring;
+import gr.uom.java.jdeodorant.refactoring.manipulators.ASTSlice;
+import gr.uom.java.jdeodorant.refactoring.manipulators.ASTSliceGroup;
 import gr.uom.java.jdeodorant.refactoring.manipulators.ExtractCloneRefactoring;
+import gr.uom.java.jdeodorant.refactoring.manipulators.TypeCheckElimination;
+import gr.uom.java.jdeodorant.refactoring.manipulators.TypeCheckEliminationGroup;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.format.Border;
@@ -147,68 +156,50 @@ public class Application implements IApplication {
 
 				ApplicationMode applicationMode = cliParser.getApplicationMode(ApplicationMode.ANALYZE_EXISTING);
 
-				String projectName = "";
-				IJavaProject jProject = null;
-				if (cliParser.getProjectDescritionFile() != null) {
-					IProjectDescription description = ResourcesPlugin.getWorkspace().
-						loadProjectDescription(new Path(cliParser.getProjectDescritionFile()));
-					projectName = description.getName();
-					IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
-					if(!project.exists()) {
-						project.create(description, null);
-					}
-					if (!project.isOpen()) {
-						project.open(null);
-					}
-					if(project.hasNature(JavaCore.NATURE_ID)) {
-						jProject = JavaCore.create(project);
-					}					
-				} else if (cliParser.getProjectName() != null) {
-					projectName = cliParser.getProjectName();
-					jProject = findJavaProjectInWorkspace(projectName);
-				}
-				
-				if (jProject == null) {
-					throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
-				}
-				// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
-				if (applicationMode != ApplicationMode.PARSE) {
-					parseJavaProject(jProject);
-				}
+				IJavaProject jProject = getJavaProject();
 				if (!cliParser.isDebuggingEnabled())
 					handleScheduledJobsByEclipse();
 				IProject project = jProject.getProject();
 				project.setDescription(project.getDescription(), ~IProject.KEEP_HISTORY, new NullProgressMonitor());
+				
+				if (applicationMode == ApplicationMode.PRINT_OPPORTUNITIES) {
+					
+					LOGGER.info("Parsing \"{}\" and identifying refactoring opportunities", jProject.getProject().getName());
+					processOpenJavaProjects(jProject);
+					
+				} else {
+					
+					File excelFile = new File(cliParser.getExcelFilePath());
 
-				File excelFile = new File(cliParser.getExcelFilePath());
-
-				if (cliParser.hasLogToFile()) {
-					FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
-				}
-
-				int startFrom = cliParser.getStartingRow();
-				boolean appendResults = cliParser.getAppendResults();
-				int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
-				int[] cloneGroupIdsToAnalyze = cliParser.getCloneGroupIDsToAnalyze();
-				String[] testPackages = cliParser.getTestPackages();
-				String[] testSourceFolders = cliParser.getTestSourceFolders();
-
-				switch (applicationMode) {
-				case PARSE:
-					parseCloneToolOutputFile(cliParser, jProject, excelFile);		
-					break;
-				case PARSE_AND_ANALYZE:
-					parseCloneToolOutputFile(cliParser, jProject, excelFile);
-					// No break, OK?
-				case ANALYZE_EXISTING:
-					if (!excelFile.exists()) {
-						throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
+					if (cliParser.hasLogToFile()) {
+						FileLogger.addFileAppender(excelFile.getParentFile().getAbsolutePath() + "/log.log", false);
 					}
 
-					testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
-					break;
-				default:
-					throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
+					int startFrom = cliParser.getStartingRow();
+					boolean appendResults = cliParser.getAppendResults();
+					int[] cloneGroupIDsToSkip = cliParser.getCloneGroupIDsToSkip();
+					int[] cloneGroupIdsToAnalyze = cliParser.getCloneGroupIDsToAnalyze();
+					String[] testPackages = cliParser.getTestPackages();
+					String[] testSourceFolders = cliParser.getTestSourceFolders();
+
+					switch (applicationMode) {					
+					case PARSE:
+						parseCloneToolOutputFile(cliParser, jProject, excelFile);		
+						break;
+					case PARSE_AND_ANALYZE:
+						// If the application mode is not ApplicationMode.PARSE, we have to parse the project and make AST, otherwise, we don't need it. 
+						parseJavaProject(jProject);
+						parseCloneToolOutputFile(cliParser, jProject, excelFile);
+						// No break, OK?
+					case ANALYZE_EXISTING:
+						if (!excelFile.exists()) {
+							throw new FileNotFoundException("Excel file " + excelFile.getAbsolutePath() + " was not found.");
+						}
+						testRefactoring(jProject, excelFile, startFrom, appendResults, cloneGroupIDsToSkip, cloneGroupIdsToAnalyze, testPackages, testSourceFolders);
+						break;
+					default:
+						throw new IllegalArgumentException("The program mode is not correct. How did you get to this point, BTW?!");
+					}
 				}
 				status = "OK";
 			} catch (Throwable throwable) {
@@ -234,6 +225,41 @@ public class Application implements IApplication {
 		}
 
 		return IApplication.EXIT_OK;
+	}
+	
+	private void processOpenJavaProjects(IJavaProject jproject) throws CoreException {
+		List<MoveMethodCandidateRefactoring> moveMethodCandidateList = Standalone.getMoveMethodRefactoringOpportunities(jproject);
+		LOGGER.info("Move Method Refactoring Opportunities:");
+		for(MoveMethodCandidateRefactoring candidate : moveMethodCandidateList) {
+			System.out.println(candidate);
+		}
+	
+		Set<TypeCheckEliminationGroup> typeCheckEliminationGroupList = Standalone.getTypeCheckEliminationRefactoringOpportunities(jproject);
+		LOGGER.info("Type Check Elimination Refactoring Opportunities:");
+		for(TypeCheckEliminationGroup group : typeCheckEliminationGroupList) {
+			List<TypeCheckElimination> typeCheckEliminationList = group.getCandidates();
+			for(TypeCheckElimination elimination : typeCheckEliminationList) {
+				System.out.println(elimination);
+			}
+		}
+	
+		Set<ASTSliceGroup> sliceGroupList = Standalone.getExtractMethodRefactoringOpportunities(jproject);
+		LOGGER.info("Extract Method Refactoring Opportunities:");
+		for(ASTSliceGroup group : sliceGroupList) {
+			Set<ASTSlice> slices = group.getCandidates();
+			for(ASTSlice slice : slices) {
+				System.out.println(slice);
+			}
+		}
+	
+		Set<ExtractClassCandidateGroup> extractClassGroupList = Standalone.getExtractClassRefactoringOpportunities(jproject);
+		LOGGER.info("Extract Class Refactoring Opportunities:");
+		for(ExtractClassCandidateGroup group : extractClassGroupList) {
+			List<ExtractClassCandidateRefactoring> candidates = group.getCandidates();
+			for(ExtractClassCandidateRefactoring candidate : candidates) {
+				System.out.println(candidate);
+			}
+		}
 	}
 
 	private void parseCloneToolOutputFile(CLIParser cliParser, IJavaProject jProject, File excelFile) throws InvalidInputFileException {
@@ -896,6 +922,34 @@ public class Application implements IApplication {
 		} catch (WriteException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private IJavaProject getJavaProject() throws CoreException {
+		String projectName = "";
+		IJavaProject jProject = null;
+		if (cliParser.getProjectDescritionFile() != null) {
+			IProjectDescription description = ResourcesPlugin.getWorkspace().
+				loadProjectDescription(new Path(cliParser.getProjectDescritionFile()));
+			projectName = description.getName();
+			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(description.getName());
+			if(!project.exists()) {
+				project.create(description, null);
+			}
+			if (!project.isOpen()) {
+				project.open(null);
+			}
+			if(project.hasNature(JavaCore.NATURE_ID)) {
+				jProject = JavaCore.create(project);
+			}					
+		} else if (cliParser.getProjectName() != null) {
+			projectName = cliParser.getProjectName();
+			jProject = findJavaProjectInWorkspace(projectName);
+		}
+		
+		if (jProject == null) {
+			throw new RuntimeException("The project \"" + projectName + "\" is not opened in the workspace. Cannot continue.");
+		}
+		return jProject;
 	}
 
 	/**
